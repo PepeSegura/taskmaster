@@ -1,0 +1,8 @@
+-Logging system
+-Yaml parsing to variables, see subject/config example.
+-Sighup reloads config but not processes
+-Control shell with at least:
+    - status
+    - start /stop /restart
+    - reload config
+    - stop supervisor

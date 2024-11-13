@@ -1,0 +1,14 @@
+{
+    "name": "Python Taskmaster Development",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/zsh"
+    },
+    "extensions": [
+        "shassain.zsh",
+        "ms-python.python"
+    ],
+    "postCreateCommand": "chsh -s $(which zsh)"
+}
