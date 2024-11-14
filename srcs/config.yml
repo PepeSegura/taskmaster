@@ -1,30 +1,31 @@
 programs:
   nginx:
-    cmd: "/usr/local/bin/nginx -c /etc/nginx/test.conf"
-    numprocs: 1
-    autostart: true
-    autorestart: unexpected
-    exitcodes:
+    cmd: "/usr/local/bin/nginx -c /etc/nginx/test.conf" # The command to use to launch the program
+    numprocs: 1 # The number of processes to start and keep running
+    autostart: true  # Whether to start this program at launch or not
+    autorestart: unexpected # Whether the program should be restarted always, never, or on unexpected exits only
+    exitcodes: # Which return codes represent an "expected" exit status
       - 0
       - 2
-    starttime: 5
-    startretries: 3
-    stopsignal: TERM
-    stoptime: 10
-    stdout: /tmp/nginx.stdout
-    stderr: /tmp/nginx.stderr
-    env:
+    starttime: 5 # How long the program should be running after it’s started for it to be considere "successfully started"
+    startretries: 3 # How many times a restart should be attempted before aborting
+    stopsignal: TERM # Which signal should be used to stop (i.e. exit gracefully) the program
+    stoptime: 10 # ow long to wait after a graceful stop before killing the program
+    stdout: /tmp/nginx.stdout # Options to discard the program’s stdout/stderr or to redirect them to files
+    stderr: /tmp/nginx.stderr # Options to discard the program’s stdout/stderr or to redirect them to files
+    env: # Environment variables to set before launching the program execve(arg, args, env)
       STARTED_BY: taskmaster
       ANSWER: 42
-    workingdir: /tmp
-    umask: 022
+    workingdir: /tmp # A working directory to set before launching the program chdir()
+    umask: 022 # An umask to set before launching the program
 
   vogsphere:
     cmd: "/usr/local/bin/vogsphere-worker --no-prefork"
     numprocs: 8
     autostart: true
     autorestart: unexpected
-    exitcodes: 0
+    exitcodes:
+      - 4
     starttime: 5
     startretries: 3
     stopsignal: USR1

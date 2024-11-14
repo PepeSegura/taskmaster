@@ -7,8 +7,8 @@
         "terminal.integrated.shell.linux": "/bin/zsh"
     },
     "extensions": [
-        "shassain.zsh",
-        "ms-python.python"
+        "ms-python.python",
+        "golang.go",
     ],
     "postCreateCommand": "chsh -s $(which zsh)"
 }
