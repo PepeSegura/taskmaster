@@ -1,0 +1,20 @@
+programs:
+  sleep:
+    cmd: "/bin/sleep 30"
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 2
+    starttime: 5
+    startretries: 3
+    stopsignal: TERM
+    stoptime: 10
+    stdout: /workspaces/taskmaster/salida
+    stderr: /workspaces/taskmaster/errores
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /
+    umask: 022

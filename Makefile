@@ -3,8 +3,8 @@ MAKEFLAGS += --silent
 NAME := taskmaster
 PKG := ./...
 
-SRCS = 					\
-		srcs/main.go	\
+SRCS = 							\
+		srcs/main.go			\
 
 # Default target
 all: build

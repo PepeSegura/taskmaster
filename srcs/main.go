@@ -2,62 +2,60 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"os/exec"
+	"strings"
+	"syscall"
 
-	"encoding/json"
-	"gopkg.in/yaml.v3"
-	// "github.com/chzyer/readline"
+	"taskmaster/srcs/parser"
 )
 
-type program struct {
-	Cmd          string            `yaml:"cmd"`
-	Numprocs     int               `yaml:"numprocs"`
-	Autostart    bool              `yaml:"autostart"`
-	Autorestart  string            `yaml:"autorestart"`
-	Exitcodes    []int             `yaml:"exitcodes"`
-	Starttime    int               `yaml:"starttime"`
-	Startretries int               `yaml:"startretries"`
-	Stopsignal   string            `yaml:"stopsignal"`
-	Stoptime     string            `yaml:"stoptime"`
-	Stdout       string            `yaml:"stdout"`
-	Stderr       string            `yaml:"stderr"`
-	Env          map[string]string `yaml:"env"`
-	Workingdir   string            `yaml:"workingdir"`
-	Umask        string            `yaml:"umask"`
-}
+func ExecCmd(path string) {
+	var args_command []string = strings.Split(path, " ")
 
-type configFile struct {
-	Programs map[string]program `yaml:"programs"`
-}
+	cmd := exec.Command(args_command[0], args_command[1:]...)
+	fmt.Println("CMD: ", cmd)
 
-func readFile(filename string) (data []byte) {
-	data, err := os.ReadFile(filename)
+	cmd.Env = append(os.Environ(), "MY_VAR=some_value")
+
+	cmd.Dir = "/"
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Store old system umask
+	oldUmask := syscall.Umask(0)
+	fmt.Printf("Old Umask: %o\n", oldUmask)
+
+	// Change umask for the process
+	syscall.Umask(024)
+
+	// Start the command
+	err := cmd.Start()
 	if err != nil {
-		log.Fatalf("failed to open file: %v", err)
+		fmt.Printf("Error: %v\n", err)
 	}
-	return
-}
 
-func printConfigFile(config configFile) {
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshalling config:", err)
-		return
-	}
-	fmt.Println(string(data))
+	// Restore umask
+	restoredUmask := syscall.Umask(oldUmask)
+	fmt.Printf("Restored Umask: %o\n", restoredUmask)
+
+	fmt.Printf("Cmd: [%s] with pid: [%d] has started\n", path, cmd.Process.Pid)
+	cmd.Wait()
+	fmt.Println("command finished!!")
 }
 
 func main() {
-	var config configFile
+	config := parser.Parser("configs/config.yml")
 
-	data := readFile("/workspaces/taskmaster/srcs/config.yml")
-
-	err := yaml.Unmarshal([]byte(data), &config)
-	if err != nil {
-		log.Fatalf("cannot unmarshal data: %v", err)
+	// Check if 'nginx' is in the config and print the 'Cmd'
+	if nginxConfig, exists := config.Programs["nginx"]; exists {
+		fmt.Println("Nginx command:", nginxConfig.Cmd)
+	} else {
+		fmt.Println("No nginx program found in the config.")
 	}
-	printConfigFile(config)
+	ExecCmd("ls -la")
+
 }
 
 // func main() {
