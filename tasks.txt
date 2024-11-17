@@ -6,3 +6,9 @@
     - start /stop /restart
     - reload config
     - stop supervisor
+
+struct for each process, must have
+    - cmd name
+    - cmd instance and pid
+    - date first time it was launched
+    - signal to stop it
