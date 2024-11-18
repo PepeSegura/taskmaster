@@ -40,7 +40,26 @@ func (config *configFile) Print() {
 	fmt.Println(string(data))
 }
 
-func (p *program) validate() (error) {
+func validateSignal(name string) (string, error) {
+	signalTypes := map[string]bool{
+		"SIGTERM": true,
+		"SIGKILL": true,
+		"SIGINT":  true,
+		"SIGSTOP": true,
+		"SIGUSR1": true,
+		"SIGUSR2": true,
+	}
+
+	name = strings.ToUpper(name)
+	if signalTypes[name] {
+		return name, nil
+	}
+	return "", errors.New("invalid signal name: [" + name + "]")
+}
+
+func (p *program) validate() error {
+	var err error
+
 	if strings.TrimSpace(p.Cmd) == "" {
 		return fmt.Errorf("Cmd is empty")
 	}
@@ -58,6 +77,10 @@ func (p *program) validate() (error) {
 	}
 	if p.Stoptime < 0 {
 		return fmt.Errorf("Invalid StopTime: [%d]", p.Stoptime)
+	}
+	p.Stopsignal, err = validateSignal(p.Stopsignal)
+	if err != nil {
+		return fmt.Errorf("%v", err)
 	}
 	return nil
 }

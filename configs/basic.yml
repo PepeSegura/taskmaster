@@ -9,7 +9,7 @@ programs:
       - 2
     starttime: 5
     startretries: 3
-    stopsignal: TERM
+    stopsignal: SIGTERM
     stoptime: 10
     stdout: /workspaces/taskmaster/salida
     stderr: /workspaces/taskmaster/errores
