@@ -1,6 +1,6 @@
 programs:
   sleep:
-    cmd: "/bin/sleep 30"
+    cmd: "/bin/sleep 5"
     numprocs: 1
     autostart: true
     autorestart: unexpected

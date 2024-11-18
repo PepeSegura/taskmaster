@@ -9,7 +9,7 @@ programs:
       - 2
     starttime: 5 # How long the program should be running after it’s started for it to be considere "successfully started"
     startretries: 3 # How many times a restart should be attempted before aborting
-    stopsignal: TERM # Which signal should be used to stop (i.e. exit gracefully) the program
+    stopsignal: SIGTERM # Which signal should be used to stop (i.e. exit gracefully) the program
     stoptime: 10 # ow long to wait after a graceful stop before killing the program
     stdout: /tmp/nginx.stdout # Options to discard the program’s stdout/stderr or to redirect them to files
     stderr: /tmp/nginx.stderr # Options to discard the program’s stdout/stderr or to redirect them to files
@@ -28,7 +28,7 @@ programs:
       - 4
     starttime: 5
     startretries: 3
-    stopsignal: USR1
+    stopsignal: SIGUSR1
     stoptime: 10
     stdout: /tmp/vgsworker.stdout
     stderr: /tmp/vgsworker.stderr

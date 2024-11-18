@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type program struct {
+type Program struct {
 	Cmd          string            `yaml:"cmd"`
 	Numprocs     int               `yaml:"numprocs"`
 	Autostart    bool              `yaml:"autostart"`
@@ -27,11 +27,11 @@ type program struct {
 	Umask        string            `yaml:"umask"`
 }
 
-type configFile struct {
-	Programs map[string]program `yaml:"programs"`
+type ConfigFile struct {
+	Programs map[string]Program `yaml:"programs"`
 }
 
-func (config *configFile) Print() {
+func (config *ConfigFile) Print() {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		fmt.Println("Error marshalling config to YAML:", err)
@@ -57,7 +57,7 @@ func validateSignal(name string) (string, error) {
 	return "", errors.New("invalid signal name: [" + name + "]")
 }
 
-func (p *program) validate() error {
+func (p *Program) validate() error {
 	var err error
 
 	if strings.TrimSpace(p.Cmd) == "" {
@@ -85,7 +85,7 @@ func (p *program) validate() error {
 	return nil
 }
 
-func (c *configFile) validate() {
+func (c *ConfigFile) validate() {
 	for name, program := range c.Programs {
 		err := program.validate()
 		if err != nil {
@@ -113,7 +113,7 @@ func checkArgs(default_file string) (string, error) {
 	return default_file, nil
 }
 
-func (c *configFile) load(filename string) {
+func (c *ConfigFile) load(filename string) {
 	var err error
 
 	data := readFile(filename)
@@ -124,7 +124,7 @@ func (c *configFile) load(filename string) {
 	}
 }
 
-func Init(filename string) (config configFile) {
+func Init(filename string) (config ConfigFile) {
 	var err error
 
 	filename, err = checkArgs(filename)

@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-
 	"taskmaster/srcs/exec"
 	_ "taskmaster/srcs/input"
 	"taskmaster/srcs/parser"
 	_ "taskmaster/srcs/signals"
+	"time"
 	// _ "github.com/chzyer/readline"
 )
 
@@ -19,7 +19,16 @@ func main() {
 	} else {
 		fmt.Println("No nginx program found in the config.")
 	}
-	exec.Cmd("echo hola")
+	exec.Init(config)
+
+	command := exec.Cmd("echo testing")
+	for {
+		fmt.Println("Main loop")
+		fmt.Printf("Process with PID %d exists.\n", command.Process.Pid)
+		time.Sleep(1 * time.Second)
+	}
+
+	// fmt.Println(command)
 	// input.Init()
 
 }
