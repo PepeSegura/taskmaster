@@ -1,7 +1,7 @@
 programs:
   sleep:
-    cmd: "/bin/sleep 5"
-    numprocs: 1
+    cmd: "sleep 4"
+    numprocs: 5
     autostart: true
     autorestart: unexpected
     exitcodes:
@@ -11,10 +11,10 @@ programs:
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 10
-    stdout: /workspaces/taskmaster/salida
-    stderr: /workspaces/taskmaster/errores
+    stdout: /dev/stdout
+    stderr: /dev/stderr
     env:
       STARTED_BY: taskmaster
       ANSWER: 42
-    workingdir: /
+    workingdir: /workspaces/taskmaster
     umask: 022

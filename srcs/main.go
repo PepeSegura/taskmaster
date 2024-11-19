@@ -7,14 +7,14 @@ import (
 
 	"taskmaster/srcs/execution"
 	_ "taskmaster/srcs/input"
-	_ "taskmaster/srcs/parser"
+	"taskmaster/srcs/parser"
 	_ "taskmaster/srcs/signals"
 	// _ "github.com/chzyer/readline"
 )
 
 func monitorCmd(cmd *exec.Cmd, done chan int) {
 	// Wait for the command to complete
-	if (cmd == nil) {
+	if cmd == nil {
 		done <- (-1)
 	}
 	err := cmd.Wait()
@@ -27,11 +27,10 @@ func monitorCmd(cmd *exec.Cmd, done chan int) {
 	done <- cmd.Process.Pid
 }
 
-
 func main() {
-	// config := parser.Init("configs/basic.yml")
+	config := parser.Init("configs/basic.yml")
 
-	// execution.Init(config)
+	execution.Init(config)
 
 	// Create a channel to receive completion signals
 	done := make(chan int, 15) // Buffered to handle up to 5 commands
@@ -48,10 +47,15 @@ func main() {
 	}
 
 	// Wait for all commands to finish
-	for range cmds {
+	for index, cmd := range cmds {
 		pid := <-done
-		fmt.Printf("Command with PID %d has completed.\n", pid)
+		fmt.Printf("Command %s index %d with PID %d has completed.\n", cmd.Path, index, pid)
 	}
 
+	
 	fmt.Println("All commands have completed.")
+	fmt.Println("Infinite loop now")
+	for {
+
+	}
 }

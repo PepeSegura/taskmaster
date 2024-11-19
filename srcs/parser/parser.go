@@ -24,7 +24,7 @@ type Program struct {
 	Stderr       string            `yaml:"stderr"`
 	Env          map[string]string `yaml:"env"`
 	Workingdir   string            `yaml:"workingdir"`
-	Umask        string            `yaml:"umask"`
+	Umask        int            `yaml:"umask"`
 }
 
 type ConfigFile struct {

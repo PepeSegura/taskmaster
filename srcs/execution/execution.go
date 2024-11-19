@@ -52,9 +52,62 @@ func Cmd(path string) *exec.Cmd {
 	return cmd
 }
 
+func setEnv(cmd *exec.Cmd, newEnv map[string]string) {
+	env := os.Environ()
+
+    for key, value := range newEnv {
+        env = append(env, fmt.Sprintf("%s=%s", key, value))
+    }
+
+    cmd.Env = env
+}
+
+func openFile(path string) (*os.File) {
+	outputFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf("Error opening output file: %v\n", err)
+        return os.Stderr
+    }
+	return outputFile
+}
+
+func setCmdInfo(program parser.Program) *exec.Cmd {
+	var args_command []string = strings.Split(program.Cmd, " ")
+
+	cmd := exec.Command(args_command[0], args_command[1:]...)
+
+	setEnv(cmd, program.Env)
+
+	cmd.Dir = program.Workingdir
+
+	stdout := openFile(program.Stdout)
+	stderr := openFile(program.Stderr)
+
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+
+	defer func() {
+        if stdout != os.Stderr {
+            stdout.Close()
+        }
+        if stderr != os.Stderr {
+            stderr.Close()
+        }
+    }()
+
+	oldUmask := syscall.Umask(program.Umask)
+
+	err := cmd.Start()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
+
+	syscall.Umask(oldUmask)
+	return cmd
+}
+
 func (e *Execution) add(name string, program parser.Program) {
-	fmt.Println("Adding: ", program)
-	newCmdInstance := *Cmd(program.Cmd)
+	newCmdInstance := *setCmdInfo(program)
 
 	newProgram := Programs{
 		Name:         name,
@@ -65,7 +118,6 @@ func (e *Execution) add(name string, program parser.Program) {
 		StopSignal:   "SIGTERM",
 	}
 
-	// Append to the slice; initialize slice if nil
 	e.Programs[name] = append(e.Programs[name], newProgram)
 }
 
@@ -76,15 +128,9 @@ func Init(config parser.ConfigFile) {
 
 	for name, program := range config.Programs {
 		fmt.Println("Name: ", name)
-		fmt.Println("Cmd: ", program.Cmd)
-		if CMDs.Programs[name] != nil {
-			fmt.Println("Ya existe en la execucion el comando " + name)
+		for index := range program.Numprocs {
+			fmt.Printf("[%s] Executing %d/%d\n", strings.ToUpper(name), index + 1, program.Numprocs)
 			CMDs.add(name, program)
-		} else {
-			fmt.Println("Aun no existe en la execucion el comando " + name)
-			CMDs.add(name, program)
-			fmt.Printf("Size array for pos [" + name + "] -> [%d]\n", len(CMDs.Programs[name]))
-			fmt.Println("Despues de añadir el comando ["+name+"]\n", CMDs.Programs[name][0].DateLaunched)
 		}
 	}
 }
