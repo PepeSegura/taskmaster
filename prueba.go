@@ -71,7 +71,7 @@ func main() {
 			return
 		default:
 			fmt.Println("Still working...")
-			time.Sleep(1 * time.Second)
+			time.Sleep(1 * time.Second / 2)
 		}
 	}
 }

@@ -2,7 +2,7 @@
 FROM golang:1.23-bookworm
 
 RUN apt-get update && \
-    apt-get install -y zsh build-essential curl git netcat-traditional python3 python3-pip supervisor && \
+    apt-get install -y zsh build-essential curl git netcat-traditional python3 python3-pip supervisor btop && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

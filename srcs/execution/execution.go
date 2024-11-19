@@ -1,4 +1,4 @@
-package exec
+package execution
 
 import (
 	"fmt"
@@ -79,10 +79,12 @@ func Init(config parser.ConfigFile) {
 		fmt.Println("Cmd: ", program.Cmd)
 		if CMDs.Programs[name] != nil {
 			fmt.Println("Ya existe en la execucion el comando " + name)
+			CMDs.add(name, program)
 		} else {
 			fmt.Println("Aun no existe en la execucion el comando " + name)
 			CMDs.add(name, program)
-			// fmt.Println("Despues de añadir el comando "+name+"\n", CMDs.Programs[name][0])
+			fmt.Printf("Size array for pos [" + name + "] -> [%d]\n", len(CMDs.Programs[name]))
+			fmt.Println("Despues de añadir el comando ["+name+"]\n", CMDs.Programs[name][0].DateLaunched)
 		}
 	}
 }

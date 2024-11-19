@@ -2,33 +2,56 @@ package main
 
 import (
 	"fmt"
-	"taskmaster/srcs/exec"
-	_ "taskmaster/srcs/input"
-	"taskmaster/srcs/parser"
-	_ "taskmaster/srcs/signals"
+	"os/exec"
 	"time"
+
+	"taskmaster/srcs/execution"
+	_ "taskmaster/srcs/input"
+	_ "taskmaster/srcs/parser"
+	_ "taskmaster/srcs/signals"
 	// _ "github.com/chzyer/readline"
 )
 
-func main() {
-	config := parser.Init("configs/basic.yml")
-
-	// Check if 'nginx' is in the config and print the 'Cmd'
-	if nginxConfig, exists := config.Programs["nginx"]; exists {
-		fmt.Println("Nginx command:", nginxConfig.Cmd)
+func monitorCmd(cmd *exec.Cmd, done chan int) {
+	// Wait for the command to complete
+	if (cmd == nil) {
+		done <- (-1)
+	}
+	err := cmd.Wait()
+	if err != nil {
+		fmt.Printf("Command: [%s] PID: [%d] finished with error: %v\n", cmd.Path, cmd.Process.Pid, err)
 	} else {
-		fmt.Println("No nginx program found in the config.")
+		fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd.Path, cmd.Process.Pid)
 	}
-	exec.Init(config)
+	// Send the PID to the channel
+	done <- cmd.Process.Pid
+}
 
-	command := exec.Cmd("echo testing")
-	for {
-		fmt.Println("Main loop")
-		fmt.Printf("Process with PID %d exists.\n", command.Process.Pid)
-		time.Sleep(1 * time.Second)
+
+func main() {
+	// config := parser.Init("configs/basic.yml")
+
+	// execution.Init(config)
+
+	// Create a channel to receive completion signals
+	done := make(chan int, 15) // Buffered to handle up to 5 commands
+
+	// Launch 5 commands in parallel
+	var cmds []*exec.Cmd
+	for i := 5; i < 10; i++ {
+		cmd := execution.Cmd("sleep 4")
+		time.Sleep(1 * time.Second / 2)
+		cmds = append(cmds, cmd)
+
+		// Start monitoring the command in a goroutine
+		go monitorCmd(cmd, done)
 	}
 
-	// fmt.Println(command)
-	// input.Init()
+	// Wait for all commands to finish
+	for range cmds {
+		pid := <-done
+		fmt.Printf("Command with PID %d has completed.\n", pid)
+	}
 
+	fmt.Println("All commands have completed.")
 }
