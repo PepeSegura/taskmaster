@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"taskmaster/srcs/execution"
@@ -35,20 +34,22 @@ func Init(config parser.ConfigFile) {
 
 func Controller(config parser.ConfigFile) {
 
-	//cmds should be in groups, and groups should be passed to execute group
-	executeGroup()
+	fmt.Println("program map contents")
 
+	for _, program := range CMDs.Programs {
+		executeGroup(program)
+	}
 }
 
-func executeGroup() {
+func executeGroup(program []execution.Programs) {
 	// Create a channel to receive completion signals
 	done := make(chan int, 5) // Buffered to handle up to 5 commands
-
-	// Launch 5 commands in parallel
 	var cmds []*exec.Cmd
-	for i := 0; i < 5; i++ {
-		cmd := execution.Cmd("sleep "+strconv.Itoa(7-i), done)
-		cmds = append(cmds, cmd)
+
+	for _, cmd_conf := range program {
+		fmt.Println("Configuring and instance of " + cmd_conf.Name)
+		execution.Cmd(cmd_conf, done)
+		cmds = append(cmds, &cmd_conf.CmdInstance)
 	}
 
 	fmt.Println("Starting monitoring for process group " + "sleep")

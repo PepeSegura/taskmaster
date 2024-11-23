@@ -20,24 +20,24 @@ type Programs struct {
 	Status       bool
 }
 
-func Cmd(path string, done chan int) *exec.Cmd {
-	var args_command []string = strings.Split(path, " ")
+func Cmd(cmd_conf Programs, done chan int) *exec.Cmd {
+	args_command := []string{cmd_conf.Name, "4"}
 
-	cmd := exec.Command(args_command[0], args_command[1:]...)
+	cmd_conf.CmdInstance = *exec.Command(args_command[0], args_command[1:]...)
 
-	cmd.Env = append(os.Environ(), "MY_VAR=some_value")
+	cmd_conf.CmdInstance.Env = append(os.Environ(), cmd_conf.CmdInstance.Env...)
 
 	// cmd.Dir = "/"
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd_conf.CmdInstance.Stdout = os.Stdout
+	cmd_conf.CmdInstance.Stderr = os.Stderr
 
 	// Store old umask and apply new one
 	newUmask := 022
 	oldUmask := syscall.Umask(newUmask)
 
 	// Start the command
-	err := cmd.Start()
+	err := cmd_conf.CmdInstance.Start()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
@@ -48,8 +48,8 @@ func Cmd(path string, done chan int) *exec.Cmd {
 
 	//monitor command
 
-	go monitorCmd(cmd, done)
-	return cmd
+	go monitorCmd(&cmd_conf.CmdInstance, done)
+	return &cmd_conf.CmdInstance
 }
 
 func setEnv(cmd *exec.Cmd, newEnv map[string]string) {
