@@ -55,5 +55,8 @@ mod:
 
 init: mod deps
 
+re:: clean
+re:: all
+
 # Targets not associated with file names
-.PHONY: all build run test test-verbose coverage fmt clean deps lint vendor
+.PHONY: all build run test test-verbose coverage fmt clean deps lint vendor re
