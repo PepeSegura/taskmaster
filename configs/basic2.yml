@@ -1,0 +1,39 @@
+programs:
+  sleep:
+    cmd: "sleep 1"
+    numprocs: 8
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 2
+    starttime: 5
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+    stdout: /dev/stdout
+    stderr: /dev/stderr
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /workspaces/taskmaster
+    umask: 022
+  env:
+    cmd: "env"
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 2
+    starttime: 5
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+    stdout: /dev/stdout
+    stderr: /dev/stderr
+    env:
+      STARTED_BY: taskmaster
+      AEREJE: dejadeje
+    workingdir: /workspaces/taskmaster
+    umask: 022

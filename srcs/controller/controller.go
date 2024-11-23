@@ -37,22 +37,23 @@ func Controller(config parser.ConfigFile) {
 	fmt.Println("program map contents")
 
 	for _, program := range CMDs.Programs {
-		executeGroup(program)
+		go executeGroup(program)
+	}
+	for {
 	}
 }
 
 func executeGroup(program []execution.Programs) {
-	// Create a channel to receive completion signals
-	done := make(chan int, 5) // Buffered to handle up to 5 commands
+	done := make(chan int, len(program))
 	var cmds []*exec.Cmd
 
 	for _, cmd_conf := range program {
-		fmt.Println("Configuring and instance of " + cmd_conf.Name)
+		fmt.Println("Configuring an instance of " + cmd_conf.Name)
 		execution.Cmd(cmd_conf, done)
 		cmds = append(cmds, &cmd_conf.CmdInstance)
 	}
 
-	fmt.Println("Starting monitoring for process group " + "sleep")
+	fmt.Println("Starting monitoring for process group " + program[0].Name)
 	for i := 0; i < len(cmds); i++ {
 		pid := <-done
 		if pid == -1 {
@@ -66,10 +67,10 @@ func executeGroup(program []execution.Programs) {
 func (e *Execution) add(name string, program parser.Program) {
 	newCmdInstance := *execution.SetCmdInfo(program)
 
+	//aqui faltan cosas creo
 	newProgram := execution.Programs{
 		Name:         name,
 		CmdInstance:  newCmdInstance,
-		Pid:          newCmdInstance.Process.Pid,
 		DateLaunched: "25/12/2024",
 		DateFinish:   "26/12/2024",
 		StopSignal:   "SIGTERM",

@@ -13,7 +13,6 @@ import (
 type Programs struct {
 	Name         string
 	CmdInstance  exec.Cmd
-	Pid          int
 	DateLaunched string
 	DateFinish   string
 	StopSignal   string
@@ -21,17 +20,6 @@ type Programs struct {
 }
 
 func Cmd(cmd_conf Programs, done chan int) *exec.Cmd {
-	args_command := []string{cmd_conf.Name, "4"}
-
-	cmd_conf.CmdInstance = *exec.Command(args_command[0], args_command[1:]...)
-
-	cmd_conf.CmdInstance.Env = append(os.Environ(), cmd_conf.CmdInstance.Env...)
-
-	// cmd.Dir = "/"
-
-	cmd_conf.CmdInstance.Stdout = os.Stdout
-	cmd_conf.CmdInstance.Stderr = os.Stderr
-
 	// Store old umask and apply new one
 	newUmask := 022
 	oldUmask := syscall.Umask(newUmask)
@@ -86,23 +74,15 @@ func SetCmdInfo(program parser.Program) *exec.Cmd {
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
-	defer func() {
+	/* 	defer func() {
 		if stdout != os.Stderr {
 			stdout.Close()
 		}
 		if stderr != os.Stderr {
 			stderr.Close()
 		}
-	}()
+	}() */
 
-	oldUmask := syscall.Umask(program.Umask)
-
-	err := cmd.Start()
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	}
-
-	syscall.Umask(oldUmask)
 	return cmd
 }
 
