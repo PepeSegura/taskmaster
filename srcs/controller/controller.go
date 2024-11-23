@@ -39,6 +39,8 @@ func Controller(config parser.ConfigFile) {
 	for _, program := range CMDs.Programs {
 		go executeGroup(program)
 	}
+
+	fmt.Println("infinite loop ahora")
 	for {
 	}
 }
