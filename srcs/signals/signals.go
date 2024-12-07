@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"reflect"
 	"sync/atomic"
 	"syscall"
+	"taskmaster/srcs/controller"
+	"taskmaster/srcs/parser"
 )
 
 var ReloadProgram int32 = 0
@@ -28,9 +31,10 @@ func signalHandler(sig os.Signal) {
 
 func setupSignalHandler() {
 	fmt.Println("Setting signalHandler")
+	arr := [4]int{1, 2, 9, 19}
 
-	for i := 1; i < 65; i++ {
-		sig := syscall.Signal(i)
+	for _, sigNum := range arr {
+		sig := syscall.Signal(sigNum)
 		signal.Notify(signalChannel, sig)
 	}
 }
@@ -48,29 +52,46 @@ func Init() {
 	}()
 }
 
-// func sendSignal(signal_name string, pid int) error {
-// 	var sig syscall.Signal
+func addGroup() {
+	/*
+		Creates program group and executes all the procs :)
+	*/
+	fmt.Println("Adding a new group!")
+}
 
-// 	switch signal_name {
-// 	case "SIGTERM":
-// 		sig = syscall.SIGTERM
-// 	case "SIGKILL":
-// 		sig = syscall.SIGKILL
-// 	case "SIGINT":
-// 		sig = syscall.SIGINT
-// 	case "SIGSTOP":
-// 		sig = syscall.SIGSTOP
-// 	case "SIGUSR1":
-// 		sig = syscall.SIGUSR1
-// 	case "SIGUSR2":
-// 		sig = syscall.SIGUSR2
-// 	default:
-// 		return fmt.Errorf("invalid signal: %s", signal_name)
-// 	}
+func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 
-// 	err := syscall.Kill(pid, sig)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to send signal: %v", err)
-// 	}
-// 	return nil
-// }
+	oldPrograms := oldConfig.Programs
+	newPrograms := newConfig.Programs
+
+	for programName := range oldPrograms {
+		if _, exists := newPrograms[programName]; !exists {
+			fmt.Printf("Program '%s' removed.\n", programName)
+			controller.KillGroup(programName)
+		}
+	}
+	for programName := range newPrograms {
+		if _, exists := oldPrograms[programName]; !exists {
+			fmt.Printf("Program '%s' added.\n", programName)
+			addGroup()
+		}
+	}
+
+	for programName, oldProgram := range oldPrograms {
+		if newProgram, exists := newPrograms[programName]; exists {
+			oldVal := reflect.ValueOf(oldProgram)
+			newVal := reflect.ValueOf(newProgram)
+
+			for i := 0; i < oldVal.NumField(); i++ {
+				fieldName := oldVal.Type().Field(i).Name
+				oldField := oldVal.Field(i).Interface()
+				newField := newVal.Field(i).Interface()
+
+				if !reflect.DeepEqual(oldField, newField) {
+					fmt.Printf("Program '%s', field '%s' changed: '%v' -> '%v'\n",
+						programName, fieldName, oldField, newField)
+				}
+			}
+		}
+	}
+}

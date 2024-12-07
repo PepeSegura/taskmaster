@@ -10,31 +10,35 @@ import (
 	"taskmaster/srcs/parser"
 )
 
+const (
+	STARTED  uint8 = 1
+	STOPPED  uint8 = 2
+	FINISHED uint8 = 3
+)
+
 type Programs struct {
 	Name         string
 	CmdInstance  exec.Cmd
 	DateLaunched string
 	DateFinish   string
 	StopSignal   string
-	Status       bool
+	Umask        int
+	Status       uint8
 }
 
-func Cmd(cmd_conf Programs, done chan int) *exec.Cmd {
+func (cmd_conf *Programs) ExecCmd(done chan int) *exec.Cmd {
 	// Store old umask and apply new one
-	newUmask := 022
-	oldUmask := syscall.Umask(newUmask)
+	oldUmask := syscall.Umask(cmd_conf.Umask)
 
 	// Start the command
 	err := cmd_conf.CmdInstance.Start()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
+	cmd_conf.Status = STARTED
 
 	// Restore umask
 	syscall.Umask(oldUmask)
-	// cmd.Wait()
-
-	//monitor command
 
 	go monitorCmd(&cmd_conf.CmdInstance, done)
 	return &cmd_conf.CmdInstance
@@ -59,7 +63,7 @@ func openFile(path string) *os.File {
 	return outputFile
 }
 
-func SetCmdInfo(program parser.Program) *exec.Cmd {
+func CreateCmdInstance(program parser.Program) *exec.Cmd {
 	var args_command []string = strings.Split(program.Cmd, " ")
 
 	cmd := exec.Command(args_command[0], args_command[1:]...)
@@ -68,11 +72,16 @@ func SetCmdInfo(program parser.Program) *exec.Cmd {
 
 	cmd.Dir = program.Workingdir
 
-	stdout := openFile(program.Stdout)
-	stderr := openFile(program.Stderr)
-
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
+	if program.Stdout != "" {
+		cmd.Stdout = openFile(program.Stdout)
+	} else {
+		cmd.Stdout = os.Stdout
+	}
+	if program.Stderr != "" {
+		cmd.Stderr = openFile(program.Stderr)
+	} else {
+		cmd.Stderr = os.Stderr
+	}
 
 	/* 	defer func() {
 		if stdout != os.Stderr {
