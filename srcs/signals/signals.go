@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"taskmaster/srcs/controller"
+	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
 )
 
@@ -16,7 +17,7 @@ var FinishProgram int32 = 0
 var signalChannel chan os.Signal = make(chan os.Signal, 1)
 
 func signalHandler(sig os.Signal) {
-	fmt.Printf("Signal (%d) received: %s\n", sig.(syscall.Signal), sig.String())
+	logging.Info(fmt.Sprintf("Signal (%d) received: %s\n", sig.(syscall.Signal), sig.String()))
 
 	if sig == syscall.SIGHUP {
 		fmt.Println("Reloading config...")
@@ -24,13 +25,10 @@ func signalHandler(sig os.Signal) {
 	} else if sig == syscall.SIGKILL || sig == syscall.SIGSTOP || sig == syscall.SIGINT {
 		fmt.Println("Closing program...")
 		atomic.StoreInt32(&FinishProgram, 1)
-	} else {
-		fmt.Println("Ignoring signal...")
 	}
 }
 
 func setupSignalHandler() {
-	fmt.Println("Setting signalHandler")
 	arr := [4]int{1, 2, 9, 19}
 
 	for _, sigNum := range arr {
@@ -59,13 +57,13 @@ func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 
 	for programName := range oldPrograms {
 		if _, exists := newPrograms[programName]; !exists {
-			fmt.Printf("Program '%s' removed.\n", programName)
+			logging.Info(fmt.Sprintf("Program '%s' removed.", programName))
 			controller.KillGroup(programName)
 		}
 	}
 	for programName := range newPrograms {
 		if _, exists := oldPrograms[programName]; !exists {
-			fmt.Printf("Program '%s' added.\n", programName)
+			logging.Info(fmt.Sprintf("Program '%s' added.", programName))
 			controller.AddGroup(programName, newPrograms[programName])
 		}
 	}

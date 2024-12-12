@@ -3,9 +3,9 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+	"taskmaster/srcs/logging"
 
 	"gopkg.in/yaml.v3"
 )
@@ -34,7 +34,7 @@ type ConfigFile struct {
 func (config *ConfigFile) Print() {
 	data, err := yaml.Marshal(config)
 	if err != nil {
-		fmt.Println("Error marshalling config to YAML:", err)
+		logging.Error(fmt.Sprintf("Error marshalling config to YAML: %v", err))
 		return
 	}
 	fmt.Println(string(data))
@@ -89,7 +89,7 @@ func (c *ConfigFile) validate() {
 	for name, program := range c.Programs {
 		err := program.validate()
 		if err != nil {
-			log.Fatalf("Parsing error: [%s] -> %v", name, err)
+			logging.Fatal(fmt.Sprint("Parsing error: [%s] -> %v", name, err))
 		}
 	}
 }
@@ -97,7 +97,7 @@ func (c *ConfigFile) validate() {
 func readFile(filename string) (data []byte) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		logging.Fatal(fmt.Sprint("Error: %v", err))
 	}
 	return
 }
@@ -120,7 +120,7 @@ func (c *ConfigFile) load(filename string) {
 
 	err = yaml.Unmarshal([]byte(data), &c)
 	if err != nil {
-		log.Fatalf("cannot unmarshal data: %v", err)
+		logging.Fatal(fmt.Sprintf("cannot unmarshal data: %v", err))
 	}
 }
 
@@ -129,7 +129,7 @@ func Init(filename string) (config ConfigFile) {
 
 	filename, err = checkArgs(filename)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		logging.Fatal(fmt.Sprintf("Error: %v", err))
 	}
 
 	config.load(filename)

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 
+	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
 )
 
@@ -17,8 +18,8 @@ const (
 )
 
 type Programs struct {
-	Name         string
-	CmdInstance  exec.Cmd
+	Name        string
+	CmdInstance exec.Cmd
 	// autorestart
 	// exitcodes
 	// startTime
@@ -38,7 +39,7 @@ func (cmd_conf *Programs) ExecCmd(done chan int) *exec.Cmd {
 	// Start the command
 	err := cmd_conf.CmdInstance.Start()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		logging.Error(fmt.Sprintf("Error: %v", err))
 	}
 	cmd_conf.Status = STARTED
 
@@ -59,10 +60,16 @@ func setEnv(cmd *exec.Cmd, newEnv map[string]string) {
 	cmd.Env = env
 }
 
-func openFile(path string) *os.File {
-	outputFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+func OpenFile(path string, truncate bool) *os.File {
+	var outputFile *os.File
+	var err error
+	if truncate {
+		outputFile, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	} else {
+		outputFile, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	}
 	if err != nil {
-		fmt.Printf("Error opening output file: %v\n", err)
+		logging.Error(fmt.Sprintf("Error opening output file: %v", err))
 		return os.Stderr
 	}
 	return outputFile
@@ -78,12 +85,12 @@ func CreateCmdInstance(program parser.Program) *exec.Cmd {
 	cmd.Dir = program.Workingdir
 
 	if program.Stdout != "" {
-		cmd.Stdout = openFile(program.Stdout)
+		cmd.Stdout = OpenFile(program.Stdout, true)
 	} else {
 		cmd.Stdout = os.Stdout
 	}
 	if program.Stderr != "" {
-		cmd.Stderr = openFile(program.Stderr)
+		cmd.Stderr = OpenFile(program.Stderr, true)
 	} else {
 		cmd.Stderr = os.Stderr
 	}
@@ -107,9 +114,9 @@ func monitorCmd(cmd *exec.Cmd, done chan int) {
 	}
 	err := cmd.Wait()
 	if err != nil {
-		fmt.Printf("Command: [%s] PID: [%d] finished with error: %v\n", cmd.Path, cmd.Process.Pid, err)
+		logging.Warning(fmt.Sprintf("Command: [%s] PID: [%d] finished with error: %v", cmd.Path, cmd.Process.Pid, err))
 	} else {
-		fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd.Path, cmd.Process.Pid)
+		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd.Path, cmd.Process.Pid))
 	}
 	// Send the PID to the channel
 	done <- cmd.Process.Pid
