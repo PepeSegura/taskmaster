@@ -8,6 +8,7 @@ import (
 
 	"taskmaster/srcs/execution"
 	_ "taskmaster/srcs/input"
+	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
 	// _ "github.com/chzyer/readline"
 )
@@ -19,13 +20,11 @@ type Execution struct {
 var CMDs Execution
 
 func AddGroup(name string, program parser.Program) {
-	for index := range program.Numprocs {
-		fmt.Printf("[%s] Executing %d/%d\n", strings.ToUpper(name), index+1, program.Numprocs)
+	logging.Info(fmt.Sprintf("Adding group: %s", strings.ToUpper(name)))
+	for i := 0; i < program.Numprocs; i++ {
 		CMDs.add(name, program)
 	}
 	go ExecuteGroup(CMDs.Programs[name], true, program.Autostart)
-	// for _, program := range CMDs.Programs {
-	// }
 }
 
 func Init(config parser.ConfigFile) {
@@ -34,7 +33,6 @@ func Init(config parser.ConfigFile) {
 	}
 
 	for name, program := range config.Programs {
-		fmt.Println("Name: ", name)
 		AddGroup(name, program)
 	}
 
@@ -43,17 +41,16 @@ func Init(config parser.ConfigFile) {
 func KillGroup(programName string) {
 	group, exists := CMDs.Programs[programName]
 	if !exists {
-		fmt.Println("NO EXISTE :(")
 		return
 	}
 
-	fmt.Println("Killing group: " + programName)
+	logging.Info("Killing group: " + programName)
 	for _, cmd_conf := range group {
 		if cmd_conf.CmdInstance.Process != nil {
 			sendSignal(cmd_conf.StopSignal, cmd_conf.CmdInstance.Process.Pid)
 		} else {
 			cmd_conf.Status = execution.FINISHED
-			fmt.Println("ESTA MUELTO")
+			logging.Warning("Process [" + programName + "] was already finished")
 		}
 	}
 	delete(CMDs.Programs, programName)
@@ -69,16 +66,16 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 	for i := range program {
 		(program)[i].ExecCmd(done)
 		cmds = append(cmds, &(program)[i].CmdInstance)
-		fmt.Printf("Configuring an instance of %s with pid %d\n", (program)[i].Name, (program)[i].CmdInstance.Process.Pid)
+		logging.Info(fmt.Sprintf("Executing an instance of %s with pid %d", (program)[i].Name, (program)[i].CmdInstance.Process.Pid))
 	}
 
-	fmt.Println("Starting monitoring for process group " + (program)[0].Name)
+	logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
 	for i := 0; i < len(cmds); i++ {
 		pid := <-done
 		if pid == -1 {
-			fmt.Println("A command failed to start or was nil.")
+			logging.Error("A command failed to start or was nil") // revisar mas tarde
 		} else {
-			fmt.Printf("Command with PID %d has completed.\n", pid)
+			logging.Info(fmt.Sprintf("Command with PID %d has completed.", pid))
 		}
 	}
 }
@@ -100,7 +97,7 @@ func (e *Execution) add(name string, program parser.Program) {
 	e.Programs[name] = append(e.Programs[name], newProgram)
 }
 
-func sendSignal(signal_name string, pid int) error {
+func sendSignal(signal_name string, pid int) {
 	var sig syscall.Signal
 
 	switch signal_name {
@@ -117,12 +114,11 @@ func sendSignal(signal_name string, pid int) error {
 	case "SIGUSR2":
 		sig = syscall.SIGUSR2
 	default:
-		return fmt.Errorf("invalid signal: %s", signal_name)
+		logging.Error(fmt.Sprintf("invalid signal: %s", signal_name))
 	}
 
 	err := syscall.Kill(pid, sig)
 	if err != nil {
-		return fmt.Errorf("failed to send signal: %v", err)
+		logging.Error(fmt.Sprintf("failed to send signal: %v", err))
 	}
-	return nil
 }

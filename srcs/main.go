@@ -1,17 +1,20 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	"sync/atomic"
 	"taskmaster/srcs/controller"
 	_ "taskmaster/srcs/input"
 	"taskmaster/srcs/parser"
 	"taskmaster/srcs/signals"
+	"taskmaster/srcs/logging"
 	"time"
 	// _ "github.com/chzyer/readline"
 )
 
 func main() {
+	logging.Init("/var/log/taskmaster")
+
 	config := parser.Init("configs/basic.yml")
 
 	controller.Init(config)
@@ -25,7 +28,7 @@ func main() {
 			config = newConfig
 			atomic.StoreInt32(&signals.ReloadProgram, 0)
 		}
-		fmt.Println("Doing things...")
+		// fmt.Println("Doing things...")
 		time.Sleep(time.Second / 2)
 	}
 }
