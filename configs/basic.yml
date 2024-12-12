@@ -1,8 +1,8 @@
 programs:
   sleep:
-    cmd: "sleep 4"
+    cmd: "sleep 100"
     numprocs: 5
-    autostart: true
+    autostart: false
     autorestart: unexpected
     exitcodes:
       - 0
@@ -18,3 +18,16 @@ programs:
       ANSWER: 42
     workingdir: /workspaces/taskmaster
     umask: 022
+  sleep2:
+    cmd: "sleep 100"
+    numprocs: 5
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 2
+    starttime: 5
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+

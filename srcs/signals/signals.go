@@ -2,32 +2,91 @@ package signals
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"reflect"
+	"sync/atomic"
 	"syscall"
+	"taskmaster/srcs/controller"
+	"taskmaster/srcs/parser"
 )
 
-func sendSignal(signal_name string, pid int) error {
-	var sig syscall.Signal
+var ReloadProgram int32 = 0
+var FinishProgram int32 = 0
+var signalChannel chan os.Signal = make(chan os.Signal, 1)
 
-	switch signal_name {
-	case "SIGTERM":
-		sig = syscall.SIGTERM
-	case "SIGKILL":
-		sig = syscall.SIGKILL
-	case "SIGINT":
-		sig = syscall.SIGINT
-	case "SIGSTOP":
-		sig = syscall.SIGSTOP
-	case "SIGUSR1":
-		sig = syscall.SIGUSR1
-	case "SIGUSR2":
-		sig = syscall.SIGUSR2
-	default:
-		return fmt.Errorf("invalid signal: %s", signal_name)
+func signalHandler(sig os.Signal) {
+	fmt.Printf("Signal (%d) received: %s\n", sig.(syscall.Signal), sig.String())
+
+	if sig == syscall.SIGHUP {
+		fmt.Println("Reloading config...")
+		atomic.StoreInt32(&ReloadProgram, 1)
+	} else if sig == syscall.SIGKILL || sig == syscall.SIGSTOP || sig == syscall.SIGINT {
+		fmt.Println("Closing program...")
+		atomic.StoreInt32(&FinishProgram, 1)
+	} else {
+		fmt.Println("Ignoring signal...")
+	}
+}
+
+func setupSignalHandler() {
+	fmt.Println("Setting signalHandler")
+	arr := [4]int{1, 2, 9, 19}
+
+	for _, sigNum := range arr {
+		sig := syscall.Signal(sigNum)
+		signal.Notify(signalChannel, sig)
+	}
+}
+
+func Init() {
+	setupSignalHandler()
+	go func() {
+		for {
+			signal := <-signalChannel
+			signalHandler(signal)
+			if atomic.LoadInt32(&ReloadProgram) == 1 {
+				fmt.Println("Realoading input file")
+			}
+		}
+	}()
+}
+
+func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
+
+	oldPrograms := oldConfig.Programs
+	newPrograms := newConfig.Programs
+
+	for programName := range oldPrograms {
+		if _, exists := newPrograms[programName]; !exists {
+			fmt.Printf("Program '%s' removed.\n", programName)
+			controller.KillGroup(programName)
+		}
+	}
+	for programName := range newPrograms {
+		if _, exists := oldPrograms[programName]; !exists {
+			fmt.Printf("Program '%s' added.\n", programName)
+			controller.AddGroup(programName, newPrograms[programName])
+		}
 	}
 
-	err := syscall.Kill(pid, sig)
-	if err != nil {
-		return fmt.Errorf("failed to send signal: %v", err)
+	for programName, oldProgram := range oldPrograms {
+		if newProgram, exists := newPrograms[programName]; exists {
+			oldVal := reflect.ValueOf(oldProgram)
+			newVal := reflect.ValueOf(newProgram)
+
+			for i := 0; i < oldVal.NumField(); i++ {
+				fieldName := oldVal.Type().Field(i).Name
+				oldField := oldVal.Field(i).Interface()
+				newField := newVal.Field(i).Interface()
+
+				if !reflect.DeepEqual(oldField, newField) {
+					fmt.Printf("Program '%s', field '%s' changed: '%v' -> '%v'\n", programName, fieldName, oldField, newField)
+					controller.KillGroup(programName)
+					controller.AddGroup(programName, newPrograms[programName])
+					break
+				}
+			}
+		}
 	}
-	return nil
 }
