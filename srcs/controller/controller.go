@@ -18,6 +18,16 @@ type Execution struct {
 
 var CMDs Execution
 
+func AddGroup(name string, program parser.Program) {
+	for index := range program.Numprocs {
+		fmt.Printf("[%s] Executing %d/%d\n", strings.ToUpper(name), index+1, program.Numprocs)
+		CMDs.add(name, program)
+	}
+	go ExecuteGroup(CMDs.Programs[name], true, program.Autostart)
+	// for _, program := range CMDs.Programs {
+	// }
+}
+
 func Init(config parser.ConfigFile) {
 	CMDs = Execution{
 		Programs: make(map[string][]execution.Programs),
@@ -25,20 +35,9 @@ func Init(config parser.ConfigFile) {
 
 	for name, program := range config.Programs {
 		fmt.Println("Name: ", name)
-		for index := range program.Numprocs {
-			fmt.Printf("[%s] Executing %d/%d\n", strings.ToUpper(name), index+1, program.Numprocs)
-			CMDs.add(name, program)
-		}
+		AddGroup(name, program)
 	}
-}
 
-func Controller(config parser.ConfigFile) {
-
-	fmt.Println("program map contents")
-
-	for _, program := range CMDs.Programs {
-		go executeGroup(&program)
-	}
 }
 
 func KillGroup(programName string) {
@@ -60,17 +59,20 @@ func KillGroup(programName string) {
 	delete(CMDs.Programs, programName)
 }
 
-func executeGroup(program *[]execution.Programs) {
-	done := make(chan int, len(*program))
+func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
+	if autocall && !autostart {
+		return
+	}
+	done := make(chan int, len(program))
 	var cmds []*exec.Cmd
 
-	for i := range *program {
-		(*program)[i].ExecCmd(done)
-		cmds = append(cmds, &(*program)[i].CmdInstance)
-		fmt.Printf("Configuring an instance of %s with pid %d\n", (*program)[i].Name, (*program)[i].CmdInstance.Process.Pid)
+	for i := range program {
+		(program)[i].ExecCmd(done)
+		cmds = append(cmds, &(program)[i].CmdInstance)
+		fmt.Printf("Configuring an instance of %s with pid %d\n", (program)[i].Name, (program)[i].CmdInstance.Process.Pid)
 	}
 
-	fmt.Println("Starting monitoring for process group " + (*program)[0].Name)
+	fmt.Println("Starting monitoring for process group " + (program)[0].Name)
 	for i := 0; i < len(cmds); i++ {
 		pid := <-done
 		if pid == -1 {

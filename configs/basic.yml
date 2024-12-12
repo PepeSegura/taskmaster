@@ -2,7 +2,7 @@ programs:
   sleep:
     cmd: "sleep 100"
     numprocs: 5
-    autostart: true
+    autostart: false
     autorestart: unexpected
     exitcodes:
       - 0

@@ -52,13 +52,6 @@ func Init() {
 	}()
 }
 
-func addGroup() {
-	/*
-		Creates program group and executes all the procs :)
-	*/
-	fmt.Println("Adding a new group!")
-}
-
 func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 
 	oldPrograms := oldConfig.Programs
@@ -73,7 +66,7 @@ func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 	for programName := range newPrograms {
 		if _, exists := oldPrograms[programName]; !exists {
 			fmt.Printf("Program '%s' added.\n", programName)
-			addGroup()
+			controller.AddGroup(programName, newPrograms[programName])
 		}
 	}
 
@@ -88,8 +81,10 @@ func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 				newField := newVal.Field(i).Interface()
 
 				if !reflect.DeepEqual(oldField, newField) {
-					fmt.Printf("Program '%s', field '%s' changed: '%v' -> '%v'\n",
-						programName, fieldName, oldField, newField)
+					fmt.Printf("Program '%s', field '%s' changed: '%v' -> '%v'\n", programName, fieldName, oldField, newField)
+					controller.KillGroup(programName)
+					controller.AddGroup(programName, newPrograms[programName])
+					break
 				}
 			}
 		}

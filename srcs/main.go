@@ -15,7 +15,6 @@ func main() {
 	config := parser.Init("configs/basic.yml")
 
 	controller.Init(config)
-	controller.Controller(config)
 
 	signals.Init()
 

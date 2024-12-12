@@ -19,6 +19,11 @@ const (
 type Programs struct {
 	Name         string
 	CmdInstance  exec.Cmd
+	// autorestart
+	// exitcodes
+	// startTime
+	// startRetries
+	// stopTime
 	DateLaunched string
 	DateFinish   string
 	StopSignal   string
@@ -90,7 +95,7 @@ func CreateCmdInstance(program parser.Program) *exec.Cmd {
 		if stderr != os.Stderr {
 			stderr.Close()
 		}
-	}() */
+	}()*/
 
 	return cmd
 }
