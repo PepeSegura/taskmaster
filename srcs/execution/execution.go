@@ -32,7 +32,7 @@ type Programs struct {
 	Status       uint8
 }
 
-func (cmd_conf *Programs) ExecCmd(done chan int) *exec.Cmd {
+func (cmd_conf *Programs) ExecCmd(done chan int) {
 	// Store old umask and apply new one
 	oldUmask := syscall.Umask(cmd_conf.Umask)
 
@@ -47,7 +47,6 @@ func (cmd_conf *Programs) ExecCmd(done chan int) *exec.Cmd {
 	syscall.Umask(oldUmask)
 
 	go monitorCmd(&cmd_conf.CmdInstance, done)
-	return &cmd_conf.CmdInstance
 }
 
 func setEnv(cmd *exec.Cmd, newEnv map[string]string) {
@@ -120,4 +119,21 @@ func monitorCmd(cmd *exec.Cmd, done chan int) {
 	}
 	// Send the PID to the channel
 	done <- cmd.Process.Pid
+}
+
+func (cmd_conf *Programs) PrintStatus() {
+	var statusstr string
+	switch cmd_conf.Status {
+	case 0:
+		statusstr = "STOPPED"
+	case 1:
+		statusstr = "RUNNING"
+	case 2:
+		statusstr = "FINISHED"
+	}
+	if cmd_conf.CmdInstance.Process != nil {
+		fmt.Printf("%s PID %d\n", statusstr, cmd_conf.CmdInstance.Process.Pid)
+	} else {
+		fmt.Printf("%s\n", statusstr)
+	}
 }

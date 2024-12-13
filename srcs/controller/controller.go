@@ -2,12 +2,10 @@ package controller
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 	"syscall"
 
 	"taskmaster/srcs/execution"
-	_ "taskmaster/srcs/input"
 	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
 	// _ "github.com/chzyer/readline"
@@ -19,12 +17,13 @@ type Execution struct {
 
 var CMDs Execution
 
+var Config parser.ConfigFile
+
 func AddGroup(name string, program parser.Program) {
 	logging.Info(fmt.Sprintf("Adding group: %s", strings.ToUpper(name)))
 	for i := 0; i < program.Numprocs; i++ {
 		CMDs.add(name, program)
 	}
-	go ExecuteGroup(CMDs.Programs[name], true, program.Autostart)
 }
 
 func Init(config parser.ConfigFile) {
@@ -34,11 +33,12 @@ func Init(config parser.ConfigFile) {
 
 	for name, program := range config.Programs {
 		AddGroup(name, program)
+		go ExecuteGroup(CMDs.Programs[name], true, program.Autostart)
 	}
 
 }
 
-func KillGroup(programName string) {
+func KillGroup(programName string, reAdd bool) {
 	group, exists := CMDs.Programs[programName]
 	if !exists {
 		return
@@ -54,6 +54,15 @@ func KillGroup(programName string) {
 		}
 	}
 	delete(CMDs.Programs, programName)
+	if reAdd {
+		AddGroup(programName, Config.Programs[programName])
+	}
+}
+
+func KillAll() {
+	for key := range CMDs.Programs {
+		KillGroup(key, false)
+	}
 }
 
 func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
@@ -61,16 +70,16 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 		return
 	}
 	done := make(chan int, len(program))
-	var cmds []*exec.Cmd
+	ctr := 0
 
 	for i := range program {
 		(program)[i].ExecCmd(done)
-		cmds = append(cmds, &(program)[i].CmdInstance)
 		logging.Info(fmt.Sprintf("Executing an instance of %s with pid %d", (program)[i].Name, (program)[i].CmdInstance.Process.Pid))
+		ctr += 1
 	}
 
 	logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
-	for i := 0; i < len(cmds); i++ {
+	for i := 0; i < ctr; i++ {
 		pid := <-done
 		if pid == -1 {
 			logging.Error("A command failed to start or was nil") // revisar mas tarde
@@ -78,6 +87,52 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 			logging.Info(fmt.Sprintf("Command with PID %d has completed.", pid))
 		}
 	}
+}
+
+func programStatus(program []execution.Programs) {
+	for _, instance := range program {
+		instance.PrintStatus()
+	}
+}
+
+func Status() {
+	for key, program := range CMDs.Programs {
+		fmt.Printf("\nStatus of group \"%s\":\n\n", key)
+		programStatus(program)
+	}
+}
+
+func Try2StartGroup(name string) {
+	logging.Info("Trying to start group: " + name)
+	group, exists := CMDs.Programs[name]
+
+	if !exists {
+		logging.Error(fmt.Sprintf("Group %s doesnt exist", name))
+		fmt.Printf("Group %s doesnt exist\n", name)
+		return
+	}
+
+	for _, cmd_conf := range group {
+		if cmd_conf.CmdInstance.Process != nil {
+			logging.Error(fmt.Sprintf("Some instance of group %s is already running, stop them first", name))
+			fmt.Printf("Some instance of group %s is already running, stop them first\n", name)
+			return
+		}
+	}
+
+	go ExecuteGroup(group, false, true)
+}
+
+func Try2StopGroup(name string) {
+	_, exists := CMDs.Programs[name]
+	if !exists {
+		logging.Error(fmt.Sprintf("Group %s doesnt exist", name))
+		fmt.Printf("Group %s doesnt exist\n", name)
+		return
+	}
+
+	logging.Info("Trying to stop group: " + name)
+	KillGroup(name, true)
 }
 
 func (e *Execution) add(name string, program parser.Program) {
