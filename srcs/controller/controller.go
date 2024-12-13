@@ -8,7 +8,6 @@ import (
 	"taskmaster/srcs/execution"
 	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
-	// _ "github.com/chzyer/readline"
 )
 
 type Execution struct {
@@ -89,16 +88,34 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 	}
 }
 
-func programStatus(program []execution.Programs) {
+func programStatus(program []execution.Programs) [][]string {
+	rows := [][]string{}
 	for _, instance := range program {
-		instance.PrintStatus()
+		rows = append(rows, instance.PrintStatus())
 	}
+	return rows
+}
+
+func printTable(header []string, rows [][]string, groupLen int) {
+	hline := strings.Repeat("─", 39)
+	topline_left := strings.Repeat("─", groupLen+2)
+	topline_right := strings.Repeat("─", 36-groupLen)
+
+	fmt.Printf("├%s┴%s┐\n", topline_left, topline_right)
+	fmt.Printf("│ %-20s │ %-14s │\n", header[0], header[1])
+	fmt.Printf("├%s┤\n", hline)
+	for _, row := range rows {
+		fmt.Printf("│ %-20s │ %-14s │\n", row[0], row[1])
+	}
+	fmt.Printf("└%s┘\n", hline)
 }
 
 func Status() {
 	for key, program := range CMDs.Programs {
-		fmt.Printf("\nStatus of group \"%s\":\n\n", key)
-		programStatus(program)
+		fmt.Printf("\n┌ %s ┐\n", key)
+		headers := []string{"Status", "PID"}
+		rows := programStatus(program)
+		printTable(headers, rows, len(key))
 	}
 }
 

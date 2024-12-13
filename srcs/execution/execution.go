@@ -116,12 +116,13 @@ func monitorCmd(cmd *exec.Cmd, done chan int) {
 		logging.Warning(fmt.Sprintf("Command: [%s] PID: [%d] finished with error: %v", cmd.Path, cmd.Process.Pid, err))
 	} else {
 		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd.Path, cmd.Process.Pid))
+		fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd.Path, cmd.Process.Pid)
 	}
 	// Send the PID to the channel
 	done <- cmd.Process.Pid
 }
 
-func (cmd_conf *Programs) PrintStatus() {
+func (cmd_conf *Programs) PrintStatus() []string {
 	var statusstr string
 	switch cmd_conf.Status {
 	case 0:
@@ -131,9 +132,9 @@ func (cmd_conf *Programs) PrintStatus() {
 	case 2:
 		statusstr = "FINISHED"
 	}
+
 	if cmd_conf.CmdInstance.Process != nil {
-		fmt.Printf("%s PID %d\n", statusstr, cmd_conf.CmdInstance.Process.Pid)
-	} else {
-		fmt.Printf("%s\n", statusstr)
+		return []string{statusstr, fmt.Sprintf("%d", cmd_conf.CmdInstance.Process.Pid)}
 	}
+	return []string{statusstr, "-"}
 }
