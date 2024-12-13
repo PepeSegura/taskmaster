@@ -1,8 +1,8 @@
 programs:
   sleep:
     cmd: "sleep 100"
-    numprocs: 5
-    autostart: false
+    numprocs: 2
+    autostart: true
     autorestart: unexpected
     exitcodes:
       - 0
@@ -20,7 +20,7 @@ programs:
     umask: 022
   sleep2:
     cmd: "sleep 100"
-    numprocs: 5
+    numprocs: 2
     autostart: true
     autorestart: unexpected
     exitcodes:
@@ -30,4 +30,3 @@ programs:
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 10
-

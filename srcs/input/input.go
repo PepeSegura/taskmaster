@@ -3,9 +3,16 @@ package input
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
+
+	"taskmaster/srcs/controller"
+	"taskmaster/srcs/logging"
+	"taskmaster/srcs/signals"
 
 	"github.com/chzyer/readline"
 )
+
+var FinishProgram int32 = 0
 
 type Command struct {
 	Name string
@@ -51,35 +58,57 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 }
 
 func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
-	for {
-		cmd, ok := <-commandChan
-		if !ok {
-			fmt.Println("Command channel closed. Exiting.")
-			close(ackChan)
-			return
-		}
-
-		switch cmd.Name {
-		case "help":
-			fmt.Println("Available commands: help, start, stop, restart, reload, exit")
-		case "start", "stop", "restart":
-			if len(cmd.Args) == 0 {
-				fmt.Printf("%s command requires an argument.\n", cmd.Name)
-			} else {
-				fmt.Printf("Executing %s with argument: %s\n", cmd.Name, strings.Join(cmd.Args, " "))
-			}
-		case "reload":
-			fmt.Println("Reloading...")
-		case "exit":
-			fmt.Println("Goodbye!")
-			close(commandChan)
-		default:
-			fmt.Printf("Unknown command: %s\n", cmd.Name)
-		}
-
-		// tell shell reader command has been processed, print new prompt
-		ackChan <- struct{}{}
+	cmd, ok := <-commandChan
+	if !ok {
+		close(ackChan)
+		atomic.StoreInt32(&FinishProgram, 1)
+		return
 	}
+
+	logging.Info(fmt.Sprintf("shell: Executing command %s", cmd.Name))
+	switch cmd.Name {
+	case "help":
+		fmt.Println("Available commands: help, status, start, stop, restart, reload, exit")
+	case "status":
+		controller.Status()
+	case "start":
+		if len(cmd.Args) == 0 {
+			fmt.Printf("%s command requires an argument.\n", cmd.Name)
+		} else {
+			for _, arg := range cmd.Args {
+				controller.Try2StartGroup(arg)
+			}
+		}
+	case "stop":
+		if len(cmd.Args) == 0 {
+			fmt.Printf("%s command requires an argument.\n", cmd.Name)
+		} else {
+			for _, arg := range cmd.Args {
+				controller.Try2StopGroup(arg)
+			}
+		}
+	case "restart":
+		if len(cmd.Args) == 0 {
+			fmt.Printf("%s command requires an argument.\n", cmd.Name)
+		} else {
+			for _, arg := range cmd.Args {
+				controller.Try2StopGroup(arg)
+				controller.Try2StartGroup(arg)
+			}
+		}
+	case "reload":
+		fmt.Println("Reloading...")
+		atomic.StoreInt32(&signals.ReloadProgram, 1)
+	case "exit":
+		fmt.Println("Goodbye!")
+		close(commandChan)
+	default:
+		fmt.Printf("Unknown command: %s\n", cmd.Name)
+		fmt.Println("Available commands: help, status, start, stop, restart, reload, exit")
+	}
+
+	// tell shell reader command has been processed, print new prompt
+	ackChan <- struct{}{}
 }
 
 // func Init() {

@@ -58,13 +58,14 @@ func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 	for programName := range oldPrograms {
 		if _, exists := newPrograms[programName]; !exists {
 			logging.Info(fmt.Sprintf("Program '%s' removed.", programName))
-			controller.KillGroup(programName)
+			controller.KillGroup(programName, false)
 		}
 	}
 	for programName := range newPrograms {
 		if _, exists := oldPrograms[programName]; !exists {
 			logging.Info(fmt.Sprintf("Program '%s' added.", programName))
 			controller.AddGroup(programName, newPrograms[programName])
+			go controller.ExecuteGroup(controller.CMDs.Programs[programName], true, newPrograms[programName].Autostart)
 		}
 	}
 
@@ -80,8 +81,9 @@ func DiffConfigs(oldConfig, newConfig parser.ConfigFile) {
 
 				if !reflect.DeepEqual(oldField, newField) {
 					fmt.Printf("Program '%s', field '%s' changed: '%v' -> '%v'\n", programName, fieldName, oldField, newField)
-					controller.KillGroup(programName)
+					controller.KillGroup(programName, false)
 					controller.AddGroup(programName, newPrograms[programName])
+					go controller.ExecuteGroup(controller.CMDs.Programs[programName], true, newPrograms[programName].Autostart)
 					break
 				}
 			}

@@ -17,9 +17,9 @@ func main() {
 
 	logging.Init("/var/log/taskmaster")
 
-	config := parser.Init("configs/basic.yml")
+	controller.Config = parser.Init("configs/basic.yml")
 
-	controller.Init(config)
+	controller.Init(controller.Config)
 
 	signals.Init()
 
@@ -35,15 +35,16 @@ func main() {
 		input.RunShell(commandChan, ackChan)
 	}()
 
-	for signals.FinishProgram == 0 {
+	for signals.FinishProgram == 0 && input.FinishProgram == 0 {
 		if atomic.LoadInt32(&signals.ReloadProgram) == 1 {
 			newConfig := parser.Init("configs/basic.yml")
-			signals.DiffConfigs(config, newConfig)
-			config = newConfig
+			signals.DiffConfigs(controller.Config, newConfig)
+			controller.Config = newConfig
 			atomic.StoreInt32(&signals.ReloadProgram, 0)
 		}
 		// fmt.Println("Doing things...")
 		input.CheckForCommands(commandChan, ackChan)
 		time.Sleep(time.Second / 4)
 	}
+	controller.KillAll()
 }
