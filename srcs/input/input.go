@@ -13,6 +13,7 @@ import (
 )
 
 var FinishProgram int32 = 0
+var CheckCmd int32 = 0
 
 type Command struct {
 	Name string
@@ -45,6 +46,7 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 		args := parts[1:]
 
 		// Send through the channel
+		atomic.StoreInt32(&CheckCmd, 1)
 		commandChan <- Command{Name: command, Args: args}
 
 		// Wait for main thread to process
@@ -58,6 +60,10 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 }
 
 func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
+    if CheckCmd == 0 {
+        return
+    }
+
 	cmd, ok := <-commandChan
 	if !ok {
 		close(ackChan)
@@ -101,6 +107,7 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 		atomic.StoreInt32(&signals.ReloadProgram, 1)
 	case "exit":
 		fmt.Println("Goodbye!")
+		atomic.StoreInt32(&FinishProgram, 1)
 		close(commandChan)
 	default:
 		fmt.Printf("Unknown command: %s\n", cmd.Name)
@@ -109,6 +116,7 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 
 	// tell shell reader command has been processed, print new prompt
 	ackChan <- struct{}{}
+    atomic.StoreInt32(&CheckCmd, 0)
 }
 
 // func Init() {
