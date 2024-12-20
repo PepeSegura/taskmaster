@@ -30,6 +30,7 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 	for {
 		line, err := rl.Readline()
 		if err != nil { // EOF
+			atomic.StoreInt32(&FinishProgram, 1)
 			close(commandChan)
 			break
 		}
