@@ -61,9 +61,9 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 }
 
 func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
-    if CheckCmd == 0 {
-        return
-    }
+	if CheckCmd == 0 {
+		return
+	}
 
 	cmd, ok := <-commandChan
 	if !ok {
@@ -83,6 +83,7 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 			fmt.Printf("%s command requires an argument.\n", cmd.Name)
 		} else {
 			for _, arg := range cmd.Args {
+				controller.Try2StopGroup(arg)
 				controller.Try2StartGroup(arg)
 			}
 		}
@@ -117,7 +118,7 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 
 	// tell shell reader command has been processed, print new prompt
 	ackChan <- struct{}{}
-    atomic.StoreInt32(&CheckCmd, 0)
+	atomic.StoreInt32(&CheckCmd, 0)
 }
 
 // func Init() {

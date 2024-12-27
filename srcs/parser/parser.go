@@ -48,6 +48,7 @@ func validateSignal(name string) (string, error) {
 		"SIGSTOP": true,
 		"SIGUSR1": true,
 		"SIGUSR2": true,
+		"SIGCHLD": true,
 	}
 
 	name = strings.ToUpper(name)

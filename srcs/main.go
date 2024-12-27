@@ -2,6 +2,7 @@ package main
 
 import (
 	// "fmt"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"taskmaster/srcs/controller"
@@ -46,5 +47,7 @@ func main() {
 		input.CheckForCommands(commandChan, ackChan)
 		time.Sleep(time.Second / 4)
 	}
+	logging.Info("Exiting...")
+	fmt.Println("Exiting...")
 	controller.KillAll()
 }

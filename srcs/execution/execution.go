@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
@@ -15,21 +16,22 @@ const (
 	STARTED  uint8 = 1
 	STOPPED  uint8 = 2
 	FINISHED uint8 = 3
+	FAILED   uint8 = 4
 )
 
 type Programs struct {
-	Name        string
-	CmdInstance exec.Cmd
-	// autorestart
-	// exitcodes
-	// startTime
-	// startRetries
-	// stopTime
-	DateLaunched string
-	DateFinish   string
+	Name         string
+	CmdInstance  exec.Cmd
+	Autorestart  string
+	Exitcodes    []int
+	DateLaunched int64
 	StopSignal   string
 	Umask        int
 	Status       uint8
+	StartRetries int
+	RetryCtr     int
+	StopTime     int
+	StartTime    int
 }
 
 func (cmd_conf *Programs) ExecCmd(done chan int) {
@@ -38,6 +40,7 @@ func (cmd_conf *Programs) ExecCmd(done chan int) {
 
 	// Start the command
 	err := cmd_conf.CmdInstance.Start()
+	cmd_conf.DateLaunched = time.Now().Unix()
 	if err != nil {
 		logging.Error(fmt.Sprintf("Error: %v", err))
 	}
@@ -46,7 +49,7 @@ func (cmd_conf *Programs) ExecCmd(done chan int) {
 	// Restore umask
 	syscall.Umask(oldUmask)
 
-	go monitorCmd(&cmd_conf.CmdInstance, done)
+	go monitorCmd(cmd_conf, done)
 }
 
 func setEnv(cmd *exec.Cmd, newEnv map[string]string) {
@@ -106,31 +109,41 @@ func CreateCmdInstance(program parser.Program) *exec.Cmd {
 	return cmd
 }
 
-func monitorCmd(cmd *exec.Cmd, done chan int) {
-	// Wait for the command to complete
-	if cmd == nil {
-		done <- (-1)
-	}
-	err := cmd.Wait()
+func monitorCmd(cmd_conf *Programs, done chan int) {
+	err := cmd_conf.CmdInstance.Wait()
 	if err != nil {
-		logging.Warning(fmt.Sprintf("Command: [%s] PID: [%d] finished with error: %v", cmd.Path, cmd.Process.Pid, err))
+		logging.Warning(fmt.Sprintf("Command: [%s] PID: [%d] finished with error: %v", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid, err))
 	} else {
-		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd.Path, cmd.Process.Pid))
-		fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd.Path, cmd.Process.Pid)
+		exitCode := cmd_conf.CmdInstance.ProcessState.ExitCode()
+
+		for _, validCode := range cmd_conf.Exitcodes {
+			if exitCode == validCode && time.Now().Unix()-cmd_conf.DateLaunched >= int64(cmd_conf.StartTime) {
+				logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
+				fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid)
+				// Send the PID to the channel
+				done <- cmd_conf.CmdInstance.Process.Pid
+				cmd_conf.Status = FINISHED
+				return
+			}
+		}
+		time.Sleep(time.Second / 4)
 	}
-	// Send the PID to the channel
-	done <- cmd.Process.Pid
+
+	cmd_conf.Status = FAILED
+	done <- (-1)
 }
 
 func (cmd_conf *Programs) PrintStatus() []string {
 	var statusstr string
 	switch cmd_conf.Status {
-	case 0:
+	case STOPPED:
 		statusstr = "STOPPED"
-	case 1:
+	case STARTED:
 		statusstr = "RUNNING"
-	case 2:
+	case FINISHED:
 		statusstr = "FINISHED"
+	case FAILED:
+		statusstr = "FAILED"
 	}
 
 	if cmd_conf.CmdInstance.Process != nil {

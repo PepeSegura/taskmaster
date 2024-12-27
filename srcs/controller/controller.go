@@ -3,7 +3,9 @@ package controller
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 
 	"taskmaster/srcs/execution"
 	"taskmaster/srcs/logging"
@@ -43,15 +45,23 @@ func KillGroup(programName string, reAdd bool) {
 		return
 	}
 
+	var wg sync.WaitGroup
+	numprocs := len(group)
+	wg.Add(numprocs) // stea sem a nmprocs
 	logging.Info("Killing group: " + programName)
 	for _, cmd_conf := range group {
-		if cmd_conf.CmdInstance.Process != nil {
-			sendSignal(cmd_conf.StopSignal, cmd_conf.CmdInstance.Process.Pid)
+		if cmd_conf.Status == execution.STOPPED || cmd_conf.Status == execution.FINISHED {
+			wg.Done()
+			continue
+		} else if cmd_conf.CmdInstance.Process != nil {
+			go sendSignal(&cmd_conf, &wg)
 		} else {
 			cmd_conf.Status = execution.FINISHED
 			logging.Warning("Process [" + programName + "] was already finished")
+			wg.Done()
 		}
 	}
+	wg.Wait()
 	delete(CMDs.Programs, programName)
 	if reAdd {
 		AddGroup(programName, Config.Programs[programName])
@@ -77,15 +87,14 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 		ctr += 1
 	}
 
-	logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
+	//logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
 	for i := 0; i < ctr; i++ {
 		pid := <-done
 		if pid == -1 {
 			logging.Error("A command failed to start or was nil") // revisar mas tarde
-		} else {
-			logging.Info(fmt.Sprintf("Command with PID %d has completed.", pid))
 		}
 	}
+	close(done)
 }
 
 func programStatus(program []execution.Programs) [][]string {
@@ -130,7 +139,7 @@ func Try2StartGroup(name string) {
 	}
 
 	for _, cmd_conf := range group {
-		if cmd_conf.CmdInstance.Process != nil {
+		if cmd_conf.CmdInstance.Process != nil && cmd_conf.Status != execution.FINISHED {
 			logging.Error(fmt.Sprintf("Some instance of group %s is already running, stop them first", name))
 			fmt.Printf("Some instance of group %s is already running, stop them first\n", name)
 			return
@@ -140,6 +149,7 @@ func Try2StartGroup(name string) {
 	go ExecuteGroup(group, false, true)
 }
 
+// falta logica de esperar stoptime, sino mandar SIGKILL
 func Try2StopGroup(name string) {
 	_, exists := CMDs.Programs[name]
 	if !exists {
@@ -155,23 +165,31 @@ func Try2StopGroup(name string) {
 func (e *Execution) add(name string, program parser.Program) {
 	newCmdInstance := *execution.CreateCmdInstance(program)
 
-	//aqui faltan cosas creo
-	// pepe: si que faltan si :(
 	newProgram := execution.Programs{
 		Name:         name,
 		CmdInstance:  newCmdInstance,
-		DateLaunched: "25/12/2024",
-		DateFinish:   "26/12/2024",
+		Exitcodes:    program.Exitcodes,
 		StopSignal:   program.Stopsignal,
 		Umask:        program.Umask,
+		Status:       execution.STOPPED,
+		StartRetries: program.Startretries,
+		RetryCtr:     0,
+		StopTime:     program.Stoptime,
+		StartTime:    program.Starttime,
+		Autorestart:  program.Autorestart,
 	}
+	fmt.Println("DateLaunched: ", time.Now().Unix())
 
 	e.Programs[name] = append(e.Programs[name], newProgram)
 }
 
-func sendSignal(signal_name string, pid int) {
+func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
+	defer wg.Done()
 	var sig syscall.Signal
+	signal_name := cmd_conf.StopSignal
+	pid := cmd_conf.CmdInstance.Process.Pid
 
+	// AÑADIR LAS SEÑALES POR LOS CLAVOS DE CRISTO
 	switch signal_name {
 	case "SIGTERM":
 		sig = syscall.SIGTERM
@@ -185,12 +203,24 @@ func sendSignal(signal_name string, pid int) {
 		sig = syscall.SIGUSR1
 	case "SIGUSR2":
 		sig = syscall.SIGUSR2
+	case "SIGCHLD":
+		sig = syscall.SIGCHLD
 	default:
 		logging.Error(fmt.Sprintf("invalid signal: %s", signal_name))
 	}
 
+	sentTime := time.Now().Unix()
 	err := syscall.Kill(pid, sig)
 	if err != nil {
 		logging.Error(fmt.Sprintf("failed to send signal: %v", err))
+		return
+	}
+
+	for time.Now().Unix()-sentTime <= int64(cmd_conf.StopTime) && cmd_conf.Status == execution.STARTED {
+		time.Sleep(time.Second / 4)
+	}
+
+	if cmd_conf.Status == execution.STARTED {
+		syscall.Kill(pid, syscall.SIGKILL)
 	}
 }
