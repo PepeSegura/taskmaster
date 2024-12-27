@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 	"taskmaster/srcs/logging"
 
 	"gopkg.in/yaml.v3"
@@ -31,6 +32,39 @@ type ConfigFile struct {
 	Programs map[string]Program `yaml:"programs"`
 }
 
+var SignalTypes = map[string]syscall.Signal{
+	"SIHUP":     1,
+	"SIGINT":    2,
+	"SIGQUIT":   3,
+	"SIGILL":    4,
+	"SIGTRAP":   5,
+	"SIGABRT":   6,
+	"SIGBUS":    7,
+	"SIGFPE":    8,
+	"SIGKILL":   9,
+	"SIGUSR1":   10,
+	"SIGSSEGV":  11,
+	"SIGUSR2":   12,
+	"SIGPIPE":   13,
+	"SIGALRM":   14,
+	"SIGTERM":   15,
+	"SIGCHLD":   17,
+	"SIGCONT":   18,
+	"SIGSTOP":   19,
+	"SIGTSTP":   20,
+	"SIGTTIN":   21,
+	"SIGTTOU":   22,
+	"SIGURG":    23,
+	"SIGXCPU":   24,
+	"SIGXFSZ":   25,
+	"SIGVTALRM": 26,
+	"SIGPROF":   27,
+	"SIGWINCH":  28,
+	"SIGIO":     29,
+	"SIGPWR":    30,
+	"SIGSYS":    31,
+}
+
 func (config *ConfigFile) Print() {
 	data, err := yaml.Marshal(config)
 	if err != nil {
@@ -41,21 +75,12 @@ func (config *ConfigFile) Print() {
 }
 
 func validateSignal(name string) (string, error) {
-	signalTypes := map[string]bool{
-		"SIGTERM": true,
-		"SIGKILL": true,
-		"SIGINT":  true,
-		"SIGSTOP": true,
-		"SIGUSR1": true,
-		"SIGUSR2": true,
-		"SIGCHLD": true,
-	}
-
 	name = strings.ToUpper(name)
-	if signalTypes[name] {
-		return name, nil
+	_, exists := SignalTypes[name]
+	if !exists {
+		return "", errors.New("invalid signal name: [" + name + "]")
 	}
-	return "", errors.New("invalid signal name: [" + name + "]")
+	return name, nil
 }
 
 func (p *Program) validate() error {
@@ -90,7 +115,8 @@ func (c *ConfigFile) validate() {
 	for name, program := range c.Programs {
 		err := program.validate()
 		if err != nil {
-			logging.Fatal(fmt.Sprint("Parsing error: [%s] -> %v", name, err))
+			fmt.Printf("Parsing error: [%s] -> %v", name, err)
+			logging.Fatal(fmt.Sprintf("Parsing error: [%s] -> %v\n", name, err))
 		}
 	}
 }

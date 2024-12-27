@@ -10,7 +10,7 @@ programs:
     starttime: 1
     startretries: 3
     stopsignal: SIGCHLD
-    stoptime: 5
+    stoptime: 2
     stdout: /dev/stdout
     stderr: /dev/stderr
     env:
@@ -19,14 +19,14 @@ programs:
     workingdir: /workspaces/taskmaster
     umask: 022
   sleep2:
-    cmd: "sleep 5"
+    cmd: "sleep 100"
     numprocs: 2
     autostart: true
     autorestart: unexpected
     exitcodes:
       - 0
       - 2
-    starttime: 1
+    starttime: 2
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 1

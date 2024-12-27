@@ -185,32 +185,18 @@ func (e *Execution) add(name string, program parser.Program) {
 
 func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
 	defer wg.Done()
-	var sig syscall.Signal
+
 	signal_name := cmd_conf.StopSignal
 	pid := cmd_conf.CmdInstance.Process.Pid
 
-	// AÑADIR LAS SEÑALES POR LOS CLAVOS DE CRISTO
-	switch signal_name {
-	case "SIGTERM":
-		sig = syscall.SIGTERM
-	case "SIGKILL":
-		sig = syscall.SIGKILL
-	case "SIGINT":
-		sig = syscall.SIGINT
-	case "SIGSTOP":
-		sig = syscall.SIGSTOP
-	case "SIGUSR1":
-		sig = syscall.SIGUSR1
-	case "SIGUSR2":
-		sig = syscall.SIGUSR2
-	case "SIGCHLD":
-		sig = syscall.SIGCHLD
-	default:
+	signal_num, exists := parser.SignalTypes[signal_name]
+	if !exists {
 		logging.Error(fmt.Sprintf("invalid signal: %s", signal_name))
+		syscall.Kill(pid, syscall.SIGKILL)
 	}
 
 	sentTime := time.Now().Unix()
-	err := syscall.Kill(pid, sig)
+	err := syscall.Kill(pid, signal_num)
 	if err != nil {
 		logging.Error(fmt.Sprintf("failed to send signal: %v", err))
 		return
