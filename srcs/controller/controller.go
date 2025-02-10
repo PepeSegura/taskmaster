@@ -47,7 +47,7 @@ func KillGroup(programName string, reAdd bool) {
 
 	var wg sync.WaitGroup
 	numprocs := len(group)
-	wg.Add(numprocs) // stea sem a nmprocs
+	wg.Add(numprocs)
 	logging.Info("Killing group: " + programName)
 	for _, cmd_conf := range group {
 		if cmd_conf.Status == execution.STOPPED || cmd_conf.Status == execution.FINISHED {
@@ -90,6 +90,12 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 	//logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
 	for i := 0; i < ctr; i++ {
 		pid := <-done
+		for j := 0; j < ctr; j++ {
+			if (program)[j].CmdInstance.Process != nil && (program)[j].CmdInstance.Process.Pid == pid {
+				i += (program)[j].CheckEnd(done)
+			}
+		}
+
 		if pid == -1 {
 			logging.Error("A command failed to start or was nil") // revisar mas tarde
 		}
@@ -177,6 +183,10 @@ func (e *Execution) add(name string, program parser.Program) {
 		StopTime:     program.Stoptime,
 		StartTime:    program.Starttime,
 		Autorestart:  program.Autorestart,
+		CmdStr:       program.Cmd,
+		EnvMap:       program.Env,
+		StdoutStr:    program.Stdout,
+		StderrStr:    program.Stderr,
 	}
 	fmt.Println("DateLaunched: ", time.Now().Unix())
 

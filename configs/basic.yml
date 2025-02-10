@@ -1,16 +1,16 @@
 programs:
   sleep:
-    cmd: "sleep 100"
+    cmd: "sleep 5"
     numprocs: 2
     autostart: true
     autorestart: unexpected
     exitcodes:
       - 0
-      - -1
+      - 1
     starttime: 1
     startretries: 3
-    stopsignal: SIGCHLD
-    stoptime: 2
+    stopsignal: SIGTERM
+    stoptime: 5
     stdout: /dev/stdout
     stderr: /dev/stderr
     env:
@@ -19,7 +19,7 @@ programs:
     workingdir: /workspaces/taskmaster
     umask: 022
   sleep2:
-    cmd: "sleep 100"
+    cmd: "sleep 20"
     numprocs: 2
     autostart: true
     autorestart: unexpected
@@ -30,3 +30,22 @@ programs:
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 1
+  env:
+    cmd: env
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 1
+    starttime: 0
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+    stdout: jamonEnvAsado
+    env:
+      42STARTED_BY: taskmaster
+      42ANSWER: 42
+      42FOO: bar
+    workingdir: /workspaces/taskmaster
+    umask: 022

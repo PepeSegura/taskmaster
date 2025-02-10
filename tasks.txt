@@ -1,14 +1,15 @@
--Logging system
--Yaml parsing to variables, see subject/config example.
--Sighup reloads config but not processes
+-Logging system [DONE]
+-Sighup reloads config but not processes [DONE]
 -Control shell with at least:
-    - status
-    - start /stop /restart
-    - reload config
-    - stop supervisor
+    - status [DONE]
+    - start /stop /restart  [DONE]
+    - reload config [DONE]
+    - stop supervisor [DONE]
 
-struct for each process, must have
-    - cmd name
-    - cmd instance and pid
-    - date first time it was launched
-    - signal to stop it
+TO DO:
+
+    - Autorestart with start time start retries [DONE]
+
+
+CHECK:
+    - Stop time waits even if program succesfully stops. [DONE]
