@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode"
 
 	"taskmaster/srcs/logging"
 	"taskmaster/srcs/parser"
@@ -90,7 +91,7 @@ func OpenFile(path string, truncate bool) *os.File {
 }
 
 func CreateCmdInstance(program parser.Program) *exec.Cmd {
-	var args_command []string = strings.Split(program.Cmd, " ")
+	var args_command []string = tokenize(program.Cmd)
 
 	cmd := exec.Command(args_command[0], args_command[1:]...)
 
@@ -194,7 +195,7 @@ func (cmd_conf *Programs) CheckEnd(done chan int) int {
 }
 
 func (cmd_conf *Programs) Retry(done chan int) {
-	var args_command []string = strings.Split(cmd_conf.CmdStr, " ")
+	var args_command []string = tokenize(cmd_conf.CmdStr)
 
 	cmd := exec.Command(args_command[0], args_command[1:]...)
 
@@ -232,4 +233,53 @@ func (cmd_conf *Programs) Retry(done chan int) {
 	syscall.Umask(oldUmask)
 
 	go monitorCmd(cmd_conf, done)
+}
+
+func tokenize(input string) []string {
+	var tokens []string
+	var currentToken strings.Builder
+	var inQuote rune // Tracks the quote type we're inside (0 = none)
+
+	for _, r := range input {
+		switch {
+		case inQuote == 0: // Not inside quotes
+			if unicode.IsSpace(r) {
+				// Flush current token if we have content
+				if currentToken.Len() > 0 {
+					tokens = append(tokens, currentToken.String())
+					currentToken.Reset()
+				}
+			} else if r == '\'' || r == '"' {
+				// Start quoted token
+				if currentToken.Len() > 0 {
+					// Flush existing content before quote
+					tokens = append(tokens, currentToken.String())
+					currentToken.Reset()
+				}
+				inQuote = r
+				// Do not write the opening quote to the token
+			} else {
+				currentToken.WriteRune(r)
+			}
+
+		default: // Inside quotes
+			if r == inQuote {
+				// End quoted token
+				if currentToken.Len() > 0 {
+					tokens = append(tokens, currentToken.String())
+					currentToken.Reset()
+				}
+				inQuote = 0
+			} else {
+				currentToken.WriteRune(r)
+			}
+		}
+	}
+
+	// Add any remaining content
+	if currentToken.Len() > 0 {
+		tokens = append(tokens, currentToken.String())
+	}
+
+	return tokens
 }

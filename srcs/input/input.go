@@ -53,7 +53,6 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 		// Wait for main thread to process
 		<-ackChan
 
-		// Exit if "exit"
 		if command == "exit" {
 			break
 		}
@@ -120,20 +119,3 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 	ackChan <- struct{}{}
 	atomic.StoreInt32(&CheckCmd, 0)
 }
-
-// func Init() {
-//     rl, err := readline.New("readline> ")
-//     if err != nil {
-//         panic(err)
-//     }
-//     defer rl.Close()
-
-//     for {
-//         line, err := rl.Readline()
-//         if err != nil { // io.EOF on Ctrl+D
-//             break
-// 		}
-// 		fmt.Println(err)
-//         fmt.Println("line: ", line)
-//     }
-// }

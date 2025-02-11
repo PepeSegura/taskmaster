@@ -15,22 +15,20 @@ import (
 )
 
 func main() {
-
 	logging.Init("/var/log/taskmaster")
 
 	controller.Config = parser.Init("configs/basic.yml")
 
 	controller.Init(controller.Config)
-
 	signals.Init()
 
-	// Channel for shell thread
+	// Channel for shell thread to main thread communication
 	commandChan := make(chan input.Command)
 	ackChan := make(chan struct{})
 	var wg sync.WaitGroup
 
-	// Start shell in a separate thread
-	wg.Add(1)
+	// Start shell
+	wg.Add(1) //Recheck
 	go func() {
 		defer wg.Done()
 		input.RunShell(commandChan, ackChan)
@@ -43,7 +41,6 @@ func main() {
 			controller.Config = newConfig
 			atomic.StoreInt32(&signals.ReloadProgram, 0)
 		}
-		// fmt.Println("Doing things...")
 		input.CheckForCommands(commandChan, ackChan)
 		time.Sleep(time.Second / 4)
 	}

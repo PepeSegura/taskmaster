@@ -31,7 +31,7 @@ programs:
     stopsignal: SIGTERM
     stoptime: 1
   env:
-    cmd: env
+    cmd: "bash -c 'env | grep 42'"
     numprocs: 1
     autostart: true
     autorestart: unexpected
@@ -42,7 +42,7 @@ programs:
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 10
-    stdout: /dev/stdout
+    stdout: jamoncito
     env:
       42STARTED_BY: taskmaster
       42ANSWER: 42
