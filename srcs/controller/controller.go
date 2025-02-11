@@ -171,22 +171,33 @@ func Try2StopGroup(name string) {
 func (e *Execution) add(name string, program parser.Program) {
 	newCmdInstance := *execution.CreateCmdInstance(program)
 
+	var autorest uint8
+	switch program.Autorestart {
+	case "always":
+		autorest = execution.ALWAYS
+	case "never":
+		autorest = execution.NEVER
+	case "unexpected":
+		autorest = execution.UNEXPECTED
+	}
+
 	newProgram := execution.Programs{
-		Name:         name,
-		CmdInstance:  newCmdInstance,
-		Exitcodes:    program.Exitcodes,
-		StopSignal:   program.Stopsignal,
-		Umask:        program.Umask,
-		Status:       execution.STOPPED,
-		StartRetries: program.Startretries,
-		RetryCtr:     0,
-		StopTime:     program.Stoptime,
-		StartTime:    program.Starttime,
-		Autorestart:  program.Autorestart,
-		CmdStr:       program.Cmd,
-		EnvMap:       program.Env,
-		StdoutStr:    program.Stdout,
-		StderrStr:    program.Stderr,
+		Name:             name,
+		CmdInstance:      newCmdInstance,
+		Exitcodes:        program.Exitcodes,
+		StopSignal:       program.Stopsignal,
+		Umask:            program.Umask,
+		Status:           execution.STOPPED,
+		StartRetries:     program.Startretries,
+		RetryCtr:         0,
+		StopTime:         program.Stoptime,
+		StartTime:        program.Starttime,
+		Autorestart:      program.Autorestart,
+		CmdStr:           program.Cmd,
+		EnvMap:           program.Env,
+		StdoutStr:        program.Stdout,
+		StderrStr:        program.Stderr,
+		RestartCondition: autorest,
 	}
 	fmt.Println("DateLaunched: ", time.Now().Unix())
 

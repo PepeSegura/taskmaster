@@ -20,23 +20,30 @@ const (
 	FATAL    uint8 = 5
 )
 
+const (
+	NEVER      uint8 = 1
+	ALWAYS     uint8 = 2
+	UNEXPECTED uint8 = 3
+)
+
 type Programs struct {
-	Name         string
-	CmdInstance  exec.Cmd
-	Autorestart  string
-	Exitcodes    []int
-	DateLaunched int64
-	StopSignal   string
-	Umask        int
-	Status       uint8
-	StartRetries int
-	RetryCtr     int
-	StopTime     int
-	StartTime    int
-	CmdStr       string
-	EnvMap       map[string]string
-	StderrStr    string
-	StdoutStr    string
+	Name             string
+	CmdInstance      exec.Cmd
+	Autorestart      string
+	Exitcodes        []int
+	DateLaunched     int64
+	StopSignal       string
+	Umask            int
+	Status           uint8
+	StartRetries     int
+	RetryCtr         int
+	StopTime         int
+	StartTime        int
+	CmdStr           string
+	EnvMap           map[string]string
+	StderrStr        string
+	StdoutStr        string
+	RestartCondition uint8
 }
 
 func (cmd_conf *Programs) ExecCmd(done chan int) {
@@ -165,11 +172,20 @@ func (cmd_conf *Programs) PrintStatus() []string {
 }
 
 func (cmd_conf *Programs) CheckEnd(done chan int) int {
-	if cmd_conf.Status == FAILED {
+	if cmd_conf.RestartCondition == NEVER {
+		return 0
+	}
+	if cmd_conf.Status == FAILED { // tanto always como unexpected en caso de mal exit code
 		cmd_conf.RetryCtr++
 		if cmd_conf.RetryCtr >= cmd_conf.StartRetries {
 			cmd_conf.Status = FATAL
 		} else {
+			cmd_conf.Retry(done)
+			return -1
+		}
+	} else if cmd_conf.Status == FINISHED && cmd_conf.RestartCondition == ALWAYS { // solo always con exit code valido
+		cmd_conf.RetryCtr++
+		if cmd_conf.RetryCtr < cmd_conf.StartRetries {
 			cmd_conf.Retry(done)
 			return -1
 		}

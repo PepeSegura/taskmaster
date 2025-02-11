@@ -22,7 +22,7 @@ programs:
     cmd: "sleep 20"
     numprocs: 2
     autostart: true
-    autorestart: unexpected
+    autorestart: always
     exitcodes:
       - 0
       - 2
@@ -42,7 +42,7 @@ programs:
     startretries: 3
     stopsignal: SIGTERM
     stoptime: 10
-    stdout: jamonEnvAsado
+    stdout: /dev/stdout
     env:
       42STARTED_BY: taskmaster
       42ANSWER: 42
