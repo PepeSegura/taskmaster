@@ -142,15 +142,15 @@ func Try2StartGroup(name string) {
 	group, exists := CMDs.Programs[name]
 
 	if !exists {
-		logging.Error(fmt.Sprintf("Group %s doesnt exist", name))
-		fmt.Printf("Group %s doesnt exist\n", name)
+		logging.Error(fmt.Sprintf("Group [%s] doesnt exist", name))
+		fmt.Printf("Group [%s] doesnt exist\n", name)
 		return
 	}
 
 	for _, cmd_conf := range group {
 		if cmd_conf.CmdInstance.Process != nil && cmd_conf.Status != execution.FINISHED {
 			logging.Error(fmt.Sprintf("Some instance of group %s is already running, stop them first", name))
-			fmt.Printf("Some instance of group %s is already running, stop them first\n", name)
+			fmt.Printf("Some instance of group [%s] is already running, stop them first\n", name)
 			return
 		}
 	}
@@ -161,8 +161,8 @@ func Try2StartGroup(name string) {
 func Try2StopGroup(name string) {
 	_, exists := CMDs.Programs[name]
 	if !exists {
-		logging.Error(fmt.Sprintf("Group %s doesnt exist", name))
-		fmt.Printf("Group %s doesnt exist\n", name)
+		logging.Error(fmt.Sprintf("Group [%s] doesnt exist", name))
+		fmt.Printf("Group [%s] doesnt exist\n", name)
 		return
 	}
 
@@ -201,8 +201,6 @@ func (e *Execution) add(name string, program parser.Program) {
 		StderrStr:        program.Stderr,
 		RestartCondition: autorest,
 	}
-	fmt.Println("DateLaunched: ", time.Now().Unix())
-
 	e.Programs[name] = append(e.Programs[name], newProgram)
 }
 

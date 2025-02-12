@@ -128,11 +128,9 @@ func monitorCmd(cmd_conf *Programs, done chan int) {
 			if exitCode == validCode {
 				if time.Now().Unix()-cmd_conf.DateLaunched >= int64(cmd_conf.StartTime) {
 					logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
-					fmt.Printf("Command: [%s] PID: [%d] finished successfully!\n", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid)
 					cmd_conf.Status = FINISHED
 				} else {
 					logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished too early!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
-					fmt.Printf("Command: [%s] PID: [%d] failed !!! :(\n", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid)
 					cmd_conf.Status = FAILED
 				}
 				done <- cmd_conf.CmdInstance.Process.Pid
