@@ -10,5 +10,6 @@
         "ms-python.python",
         "golang.go",
     ],
-    "postCreateCommand": "chsh -s $(which zsh)"
+    "postCreateCommand": "chsh -s $(which zsh)",
+    "appPort": ["8080:80"]
 }

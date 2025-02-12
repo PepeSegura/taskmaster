@@ -1,0 +1,20 @@
+programs:
+  nginx:
+    cmd: nginx -g "daemon off;"
+    numprocs: 1
+    autostart: true
+    autorestart: always
+    exitcodes:
+      - 0
+      - 2
+    starttime: 10
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+    stdout: /tmp/nginx.stdout
+    stderr: /tmp/nginx.stderr
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /tmp
+    umask: 022

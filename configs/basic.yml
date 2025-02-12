@@ -33,7 +33,7 @@ programs:
   env:
     cmd: env
     numprocs: 1
-    autostart: true
+    autostart: false
     autorestart: unexpected
     exitcodes:
       - 0

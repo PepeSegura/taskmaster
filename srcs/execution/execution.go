@@ -55,8 +55,12 @@ func (cmd_conf *Programs) ExecCmd(done chan int) {
 	cmd_conf.DateLaunched = time.Now().Unix()
 	if err != nil {
 		logging.Error(fmt.Sprintf("Error: %v", err))
+		cmd_conf.Status = FATAL
+		syscall.Umask(oldUmask)
+		return
+	} else {
+		cmd_conf.Status = STARTED
 	}
-	cmd_conf.Status = STARTED
 
 	// Restore umask
 	syscall.Umask(oldUmask)

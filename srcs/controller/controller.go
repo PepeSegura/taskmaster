@@ -83,6 +83,10 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 
 	for i := range program {
 		(program)[i].ExecCmd(done)
+		if program[i].CmdInstance.Process == nil {
+			continue
+		}
+
 		logging.Info(fmt.Sprintf("Executing an instance of %s with pid %d", (program)[i].Name, (program)[i].CmdInstance.Process.Pid))
 		ctr += 1
 	}

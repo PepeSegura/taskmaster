@@ -1,0 +1,82 @@
+programs:
+  signals:
+    cmd: /workspaces/taskmaster/bin/print_signals
+    numprocs: 1
+    autostart: true
+    autorestart: always
+    starttime: 0
+    startretries: 3
+    stopsignal: SIGUSR2
+    stoptime: 2
+    exitcodes:
+      - 0
+      - 1
+    stdout: ./signals_out
+    stderr: /dev/stderr
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /tmp
+    umask: 022
+
+  env:
+    cmd: env
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    stopsignal: SIGUSR1
+    stdout: ./env_out
+    stderr: /dev/stderr
+    exitcodes:
+      - 0
+      - 2
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+      MANOLO: "es el mejor"
+
+  args:
+    cmd: /workspaces/taskmaster/bin/print_argv "hola paquito" como estas
+    numprocs: 1
+    autostart: true
+    autorestart: always
+    starttime: 10
+    startretries: 3
+    stopsignal: SIGUSR1
+    stoptime: 2
+    stdout: ./print_argv_out
+    stderr: /dev/stderr
+    exitcodes:
+      - 0
+      - 2
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /tmp
+    umask: 022
+
+  pwd:
+    cmd: pwd
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    stopsignal: SIGUSR1
+    stdout: ./pwd_out_1
+    stderr: /dev/stderr
+    exitcodes:
+      - 0
+      - 2
+    workingdir: /tmp
+
+  pwd2:
+    cmd: pwd
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    stopsignal: SIGUSR1
+    stdout: ./pwd_out_2
+    stderr: /dev/stderr
+    exitcodes:
+      - 0
+      - 2
+    workingdir: /workspaces/taskmaster/bin
