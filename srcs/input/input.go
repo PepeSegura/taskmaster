@@ -29,28 +29,24 @@ func RunShell(commandChan chan Command, ackChan chan struct{}) {
 
 	for {
 		line, err := rl.Readline()
-		if err != nil { // EOF
+		if err != nil {
 			atomic.StoreInt32(&FinishProgram, 1)
 			close(commandChan)
 			break
 		}
 
-		// Trim spaces
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
-		// Split command and arguments
 		parts := strings.Fields(line)
 		command := parts[0]
 		args := parts[1:]
 
-		// Send through the channel
 		atomic.StoreInt32(&CheckCmd, 1)
 		commandChan <- Command{Name: command, Args: args}
 
-		// Wait for main thread to process
 		<-ackChan
 
 		if command == "exit" {
@@ -115,7 +111,6 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 		fmt.Println("Available commands: help, status, start, stop, restart, reload, exit")
 	}
 
-	// tell shell reader command has been processed, print new prompt
 	ackChan <- struct{}{}
 	atomic.StoreInt32(&CheckCmd, 0)
 }

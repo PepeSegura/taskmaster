@@ -114,15 +114,6 @@ func CreateCmdInstance(program parser.Program) *exec.Cmd {
 		cmd.Stderr = os.Stderr
 	}
 
-	/* 	defer func() {
-		if stdout != os.Stderr {
-			stdout.Close()
-		}
-		if stderr != os.Stderr {
-			stderr.Close()
-		}
-	}()*/
-
 	return cmd
 }
 
@@ -242,33 +233,28 @@ func (cmd_conf *Programs) Retry(done chan int) {
 func tokenize(input string) []string {
 	var tokens []string
 	var currentToken strings.Builder
-	var inQuote rune // Tracks the quote type we're inside (0 = none)
+	var inQuote rune
 
 	for _, r := range input {
 		switch {
-		case inQuote == 0: // Not inside quotes
+		case inQuote == 0:
 			if unicode.IsSpace(r) {
-				// Flush current token if we have content
 				if currentToken.Len() > 0 {
 					tokens = append(tokens, currentToken.String())
 					currentToken.Reset()
 				}
 			} else if r == '\'' || r == '"' {
-				// Start quoted token
 				if currentToken.Len() > 0 {
-					// Flush existing content before quote
 					tokens = append(tokens, currentToken.String())
 					currentToken.Reset()
 				}
 				inQuote = r
-				// Do not write the opening quote to the token
 			} else {
 				currentToken.WriteRune(r)
 			}
 
-		default: // Inside quotes
+		default:
 			if r == inQuote {
-				// End quoted token
 				if currentToken.Len() > 0 {
 					tokens = append(tokens, currentToken.String())
 					currentToken.Reset()
@@ -280,7 +266,6 @@ func tokenize(input string) []string {
 		}
 	}
 
-	// Add any remaining content
 	if currentToken.Len() > 0 {
 		tokens = append(tokens, currentToken.String())
 	}

@@ -164,6 +164,6 @@ func Init(filename string) (config ConfigFile) {
 
 	config.load(filename)
 	config.validate()
-	config.Print()
+	// config.Print()
 	return
 }

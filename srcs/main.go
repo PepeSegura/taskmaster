@@ -22,13 +22,11 @@ func main() {
 	controller.Init(controller.Config)
 	signals.Init()
 
-	// Channel for shell thread to main thread communication
 	commandChan := make(chan input.Command)
 	ackChan := make(chan struct{})
 	var wg sync.WaitGroup
 
-	// Start shell
-	wg.Add(1) //Recheck
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		input.RunShell(commandChan, ackChan)

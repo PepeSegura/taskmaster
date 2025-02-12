@@ -91,7 +91,6 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 		ctr += 1
 	}
 
-	//logging.Info(fmt.Sprintf("Starting monitoring for process group " + (program)[0].Name))
 	for i := 0; i < ctr; i++ {
 		pid := <-done
 		for j := 0; j < ctr; j++ {
@@ -101,7 +100,7 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 		}
 
 		if pid == -1 {
-			logging.Error("A command failed to start or was nil") // revisar mas tarde
+			logging.Error("A command failed to start or was nil")
 		}
 	}
 	close(done)
@@ -159,7 +158,6 @@ func Try2StartGroup(name string) {
 	go ExecuteGroup(group, false, true)
 }
 
-// falta logica de esperar stoptime, sino mandar SIGKILL
 func Try2StopGroup(name string) {
 	_, exists := CMDs.Programs[name]
 	if !exists {
