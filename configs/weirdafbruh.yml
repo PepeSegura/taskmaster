@@ -1,16 +1,15 @@
 programs:
-  sleep:
-    cmd: "sleep 5"
-    numprocs: 2
+  sleep: #autorestart but no startretries
+    cmd: "sleep 100"
+    numprocs: 1
     autostart: true
-    autorestart: unexpected
+    autorestart: always
     exitcodes:
       - 0
-      - 1
-    starttime: 1
+      - 2
+    starttime: 2
     startretries: 3
-    stopsignal: SIGTERM
-    stoptime: 5
+    stopsignal: sigusr1
     stdout: /dev/stdout
     stderr: /dev/stderr
     env:
@@ -18,11 +17,11 @@ programs:
       ANSWER: 42
     workingdir: /workspaces/taskmaster
     umask: 022
-  sleep2:
+  sleep2: # no cmd
     cmd: "sleep 20"
     numprocs: 2
     autostart: true
-    autorestart: always
+    autorestart: never
     exitcodes:
       - 0
       - 2
@@ -33,7 +32,7 @@ programs:
   env:
     cmd: "bash -c 'env | grep 42'"
     numprocs: 1
-    autostart: false
+    autostart: true
     autorestart: unexpected
     exitcodes:
       - 0

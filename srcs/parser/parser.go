@@ -89,7 +89,7 @@ func (p *Program) validate() error {
 	if strings.TrimSpace(p.Cmd) == "" {
 		return fmt.Errorf("Cmd is empty")
 	}
-	if p.Numprocs < 0 {
+	if p.Numprocs <= 0 {
 		return fmt.Errorf("Invalid NumProcs: [%d]", p.Numprocs)
 	}
 	if p.Autorestart != "always" && p.Autorestart != "never" && p.Autorestart != "unexpected" {
@@ -104,6 +104,9 @@ func (p *Program) validate() error {
 	if p.Stoptime < 0 {
 		return fmt.Errorf("Invalid StopTime: [%d]", p.Stoptime)
 	}
+	if len(p.Exitcodes) == 0 {
+		return fmt.Errorf("Invalid exitcodes: need to provide at least one")
+	}
 	p.Stopsignal, err = validateSignal(p.Stopsignal)
 	if err != nil {
 		return fmt.Errorf("%v", err)
@@ -115,8 +118,8 @@ func (c *ConfigFile) validate() {
 	for name, program := range c.Programs {
 		err := program.validate()
 		if err != nil {
-			fmt.Printf("Parsing error: [%s] -> %v", name, err)
-			logging.Fatal(fmt.Sprintf("Parsing error: [%s] -> %v\n", name, err))
+			fmt.Printf("Parsing error: [%s] -> %v.\n", name, err)
+			logging.Fatal(fmt.Sprintf("Parsing error: [%s] -> %v.\n", name, err))
 		}
 	}
 }

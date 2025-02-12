@@ -13,3 +13,18 @@ TO DO:
 
 CHECK:
     - Stop time waits even if program succesfully stops. [DONE]
+
+    - Parser corner cases:
+        -no cmd -> errors and exits
+        -no numprocs -> errors and exits
+        -no autorestart -> errors and exits
+        -no autostart -> autostart=false
+        -no exitcodes -> provide at least one or exit
+        -no starttime -> starttime=0
+        -no start retries -> doesnt retry
+        -no stopsignal -> invalid (maybe default to sigterm)
+        -no stoptime  -> stoptime=0
+        -no stdout/stderr -> defaults to terminal stdout/stderr
+        -no env -> same env we get (env=current)
+        -no workdir -> same workdir we get (workdir=current)
+        -no umask -> sets it to 000
