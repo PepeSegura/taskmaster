@@ -21,7 +21,7 @@ var CMDs Execution
 var Config parser.ConfigFile
 
 func AddGroup(name string, program parser.Program) {
-	logging.Info(fmt.Sprintf("Adding group: %s", strings.ToUpper(name)))
+	logging.Info(fmt.Sprintf("Adding group: %s", name))
 	for i := 0; i < program.Numprocs; i++ {
 		CMDs.add(name, program)
 	}
@@ -48,16 +48,16 @@ func KillGroup(programName string, reAdd bool) {
 	var wg sync.WaitGroup
 	numprocs := len(group)
 	wg.Add(numprocs)
-	logging.Info("Killing group: " + programName)
-	for _, cmd_conf := range group {
-		if cmd_conf.Status == execution.STOPPED || cmd_conf.Status == execution.FINISHED {
+	logging.Info("Killing and removing group: " + programName)
+	for i := range group {
+		if group[i].Status == execution.STOPPED || group[i].Status == execution.FINISHED {
+			logging.Info("Process [" + programName + "] was already finished/stopped")
 			wg.Done()
 			continue
-		} else if cmd_conf.CmdInstance.Process != nil {
-			go sendSignal(&cmd_conf, &wg)
+		} else if group[i].CmdInstance.Process != nil && (group[i].Status != execution.FINISHED && group[i].Status != execution.FATAL) {
+			go sendSignal(&group[i], &wg)
 		} else {
-			cmd_conf.Status = execution.FINISHED
-			logging.Warning("Process [" + programName + "] was already finished")
+			logging.Info("Process [" + programName + "] was already finished")
 			wg.Done()
 		}
 	}
@@ -83,12 +83,12 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 
 	for i := range program {
 		(program)[i].ExecCmd(done)
+		ctr += 1
 		if program[i].CmdInstance.Process == nil {
 			continue
 		}
 
 		logging.Info(fmt.Sprintf("Executing an instance of [%s] with pid %d", (program)[i].Name, (program)[i].CmdInstance.Process.Pid))
-		ctr += 1
 	}
 
 	for i := 0; i < ctr; i++ {
@@ -100,7 +100,7 @@ func ExecuteGroup(program []execution.Programs, autocall, autostart bool) {
 		}
 
 		if pid == -1 {
-			logging.Error("A command failed to start or was nil")
+			logging.Error(fmt.Sprintf("An instance of [%s] presented a fatal error (failed to start)", program[0].Name))
 		}
 	}
 	close(done)
@@ -200,11 +200,13 @@ func (e *Execution) add(name string, program parser.Program) {
 		StdoutStr:        program.Stdout,
 		StderrStr:        program.Stderr,
 		RestartCondition: autorest,
+		ManuallyStopped:  false,
 	}
 	e.Programs[name] = append(e.Programs[name], newProgram)
 }
 
 func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
+	cmd_conf.ManuallyStopped = true //set to diferentiate the signals sent from taskmaster
 	defer wg.Done()
 
 	signal_name := cmd_conf.StopSignal

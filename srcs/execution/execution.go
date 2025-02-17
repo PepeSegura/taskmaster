@@ -45,6 +45,7 @@ type Programs struct {
 	StderrStr        string
 	StdoutStr        string
 	RestartCondition uint8
+	ManuallyStopped  bool
 }
 
 func (cmd_conf *Programs) ExecCmd(done chan int) {
@@ -58,6 +59,7 @@ func (cmd_conf *Programs) ExecCmd(done chan int) {
 		logging.Error(fmt.Sprintf("Error: %v", err))
 		cmd_conf.Status = FATAL
 		syscall.Umask(oldUmask)
+		done <- -1
 		return
 	} else {
 		cmd_conf.Status = STARTED
@@ -119,32 +121,34 @@ func CreateCmdInstance(program parser.Program) *exec.Cmd {
 
 func monitorCmd(cmd_conf *Programs, done chan int) {
 	err := cmd_conf.CmdInstance.Wait()
+
 	if err != nil {
 		logging.Warning(fmt.Sprintf("Command: [%s] PID: [%d] finished with error: %v", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid, err))
-	} else {
-		exitCode := cmd_conf.CmdInstance.ProcessState.ExitCode()
-
-		for _, validCode := range cmd_conf.Exitcodes {
-			if exitCode == validCode {
-				if time.Now().Unix()-cmd_conf.DateLaunched >= int64(cmd_conf.StartTime) {
-					logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
-					cmd_conf.Status = FINISHED
-				} else {
-					logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished too early!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
-					cmd_conf.Status = FAILED
-				}
-				done <- cmd_conf.CmdInstance.Process.Pid
-				return
-			}
-		}
-		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished with invalid exitcode", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
-		cmd_conf.Status = FAILED
+	}
+	if cmd_conf.ManuallyStopped {
+		cmd_conf.Status = STOPPED
+		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] was manually stopped, signal not treated as error", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
 		done <- cmd_conf.CmdInstance.Process.Pid
 		return
 	}
+	exitCode := cmd_conf.CmdInstance.ProcessState.ExitCode()
 
+	for _, validCode := range cmd_conf.Exitcodes {
+		if exitCode == validCode {
+			if time.Now().Unix()-cmd_conf.DateLaunched >= int64(cmd_conf.StartTime) {
+				logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished successfully!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
+				cmd_conf.Status = FINISHED
+			} else {
+				logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished too early!", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
+				cmd_conf.Status = FAILED
+			}
+			done <- cmd_conf.CmdInstance.Process.Pid
+			return
+		}
+	}
+	logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished with invalid exitcode", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
 	cmd_conf.Status = FAILED
-	done <- (-1)
+	done <- cmd_conf.CmdInstance.Process.Pid
 }
 
 func (cmd_conf *Programs) PrintStatus() []string {

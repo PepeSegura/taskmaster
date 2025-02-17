@@ -1,16 +1,16 @@
 programs:
   sleep:
-    cmd: "sleep 10"
-    numprocs: 8
+    cmd: "sleep 3"
+    numprocs: 2
     autostart: true
     autorestart: unexpected
     exitcodes:
       - 0
       - 2
-    starttime: 5
+    starttime: 1
     startretries: 3
     stopsignal: SIGTERM
-    stoptime: 10
+    stoptime: 1
     stdout: /dev/stdout
     stderr: /dev/stderr
     env:

@@ -103,7 +103,6 @@ func CheckForCommands(commandChan chan Command, ackChan chan struct{}) {
 		fmt.Println("Reloading...")
 		atomic.StoreInt32(&signals.ReloadProgram, 1)
 	case "exit":
-		fmt.Println("Goodbye!")
 		atomic.StoreInt32(&FinishProgram, 1)
 		close(commandChan)
 	default:

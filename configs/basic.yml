@@ -19,7 +19,7 @@ programs:
     workingdir: /workspaces/taskmaster
     umask: 022
   sleep2:
-    cmd: "sleep 20"
+    cmd: "sleep 6"
     numprocs: 2
     autostart: true
     autorestart: always
