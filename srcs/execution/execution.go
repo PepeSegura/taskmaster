@@ -137,7 +137,10 @@ func monitorCmd(cmd_conf *Programs, done chan int) {
 				return
 			}
 		}
-		time.Sleep(time.Second / 4)
+		logging.Info(fmt.Sprintf("Command: [%s] PID: [%d] finished with invalid exitcode", cmd_conf.CmdInstance.Path, cmd_conf.CmdInstance.Process.Pid))
+		cmd_conf.Status = FAILED
+		done <- cmd_conf.CmdInstance.Process.Pid
+		return
 	}
 
 	cmd_conf.Status = FAILED
@@ -173,6 +176,7 @@ func (cmd_conf *Programs) CheckEnd(done chan int) int {
 		cmd_conf.RetryCtr++
 		if cmd_conf.RetryCtr >= cmd_conf.StartRetries {
 			cmd_conf.Status = FATAL
+			logging.Info(fmt.Sprintf("[%s]: exceeded max retries; FATAL", cmd_conf.Name))
 		} else {
 			cmd_conf.Retry(done)
 			return -1
@@ -188,6 +192,7 @@ func (cmd_conf *Programs) CheckEnd(done chan int) int {
 }
 
 func (cmd_conf *Programs) Retry(done chan int) {
+
 	var args_command []string = tokenize(cmd_conf.CmdStr)
 
 	cmd := exec.Command(args_command[0], args_command[1:]...)
@@ -225,6 +230,11 @@ func (cmd_conf *Programs) Retry(done chan int) {
 	// Restore umask
 	syscall.Umask(oldUmask)
 
+	if cmd_conf.CmdInstance.Process != nil {
+		logging.Info(fmt.Sprintf("Retry #%d: Executing an instance of [%s] with pid %d", cmd_conf.RetryCtr, cmd_conf.Name, cmd_conf.CmdInstance.Process.Pid))
+	} else {
+		logging.Info(fmt.Sprintf("Retry #%d: Executing an instance of [%s]", cmd_conf.RetryCtr, cmd_conf.Name))
+	}
 	go monitorCmd(cmd_conf, done)
 }
 
