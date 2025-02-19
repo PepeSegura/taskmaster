@@ -1,23 +1,4 @@
 programs:
-  sleep:
-    cmd: "sleep 60"
-    numprocs: 2
-    autostart: true
-    autorestart: always
-    exitcodes:
-      - 0
-      - 1
-    starttime: 1
-    startretries: 3
-    stopsignal: SIGTERM
-    stoptime: 5
-    stdout: /dev/stdout
-    stderr: /dev/stderr
-    env:
-      STARTED_BY: taskmaster
-      ANSWER: 42
-    workingdir: /workspaces/taskmaster
-    umask: 022
   env:
     cmd: "bash -c 'env | grep 42'"
     numprocs: 1
@@ -36,4 +17,18 @@ programs:
       42ANSWER: 42
       42FOO: bar
     workingdir: /workspaces/taskmaster
+    umask: 022
+  stderr:
+    cmd: cat fadfsafas
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+      - 1
+    starttime: 0
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 10
+    stderr: stderrcat
     umask: 022

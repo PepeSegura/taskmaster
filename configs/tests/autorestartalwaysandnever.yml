@@ -1,0 +1,23 @@
+programs:
+  always:
+    cmd: "sleep 2"
+    numprocs: 1
+    autostart: true
+    autorestart: always
+    exitcodes:
+      - 0
+    starttime: 1
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5
+  never:
+    cmd: "sleep 2"
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    exitcodes:
+      - 1
+    starttime: 1
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5

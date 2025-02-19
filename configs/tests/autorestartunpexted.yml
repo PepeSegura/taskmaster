@@ -1,0 +1,34 @@
+programs:
+  unexpected_ok: #will only run the first time
+    cmd: "sleep 2"
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+    starttime: 1
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5
+  unexpected_2early: #will retry
+    cmd: "sleep 2"
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 0
+    starttime: 3 #start time takes longer than the program to exit
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5
+  unexpected_badexitcode: #will retry
+    cmd: "sleep 2"
+    numprocs: 1
+    autostart: true
+    autorestart: unexpected
+    exitcodes:
+      - 1 #program never exits with an expected exit code
+    starttime: 1 
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5

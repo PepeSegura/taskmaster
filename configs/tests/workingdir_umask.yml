@@ -1,0 +1,37 @@
+programs:
+  mkdir:
+    cmd: mkdir pepedir
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    starttime: 0
+    startretries: 3
+    stopsignal: SIGUSR1
+    stoptime: 2
+    exitcodes:
+      - 0
+      - 1
+    stdout: ./signals_out
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /workspaces/taskmaster/configs/tests
+    umask: 000
+  touch:
+    cmd: touch pepefile
+    numprocs: 1
+    autostart: true
+    autorestart: never
+    starttime: 0
+    startretries: 3
+    stopsignal: SIGUSR1
+    stoptime: 2
+    exitcodes:
+      - 0
+      - 1
+    stdout: ./signals_out
+    env:
+      STARTED_BY: taskmaster
+      ANSWER: 42
+    workingdir: /workspaces/taskmaster/configs/tests
+    umask: 000

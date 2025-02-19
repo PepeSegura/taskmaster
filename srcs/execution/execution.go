@@ -178,18 +178,20 @@ func (cmd_conf *Programs) CheckEnd(done chan int) int {
 	}
 	if cmd_conf.Status == FAILED { // tanto always como unexpected en caso de mal exit code
 		cmd_conf.RetryCtr++
-		if cmd_conf.RetryCtr >= cmd_conf.StartRetries {
-			cmd_conf.Status = FATAL
-			logging.Info(fmt.Sprintf("[%s]: exceeded max retries; FATAL", cmd_conf.Name))
-		} else {
+		if cmd_conf.RetryCtr <= cmd_conf.StartRetries {
 			cmd_conf.Retry(done)
 			return -1
+		} else {
+			cmd_conf.Status = FATAL
+			logging.Info(fmt.Sprintf("[%s]: exceeded max retries; FATAL", cmd_conf.Name))
 		}
 	} else if cmd_conf.Status == FINISHED && cmd_conf.RestartCondition == ALWAYS { // solo always con exit code valido
 		cmd_conf.RetryCtr++
-		if cmd_conf.RetryCtr < cmd_conf.StartRetries {
+		if cmd_conf.RetryCtr <= cmd_conf.StartRetries {
 			cmd_conf.Retry(done)
 			return -1
+		} else {
+			logging.Info(fmt.Sprintf("[%s]: exceeded max retries", cmd_conf.Name))
 		}
 	}
 	return 0

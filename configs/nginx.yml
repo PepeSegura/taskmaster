@@ -9,7 +9,7 @@ programs:
       - 2
     starttime: 10
     startretries: 3
-    stopsignal: SIGTERM
+    stopsignal: SIGQUIT
     stoptime: 10
     stdout: /tmp/nginx.stdout
     stderr: /tmp/nginx.stderr

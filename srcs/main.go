@@ -18,6 +18,7 @@ func main() {
 	logging.Init("/var/log/taskmaster")
 
 	controller.Config = parser.Init("configs/basic.yml")
+	logging.Info("--------------------------- Starting up... ---------------------------")
 
 	controller.Init(controller.Config)
 	signals.Init()

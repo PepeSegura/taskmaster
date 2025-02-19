@@ -1,0 +1,12 @@
+programs:
+  sleep:
+    cmd: "sleep 5"
+    numprocs: 8
+    autorestart: never
+    autostart: true
+    exitcodes:
+      - 0
+    starttime: 1
+    startretries: 3
+    stopsignal: SIGTERM
+    stoptime: 5

@@ -7,23 +7,24 @@
 
 void signal_handler(int signum)
 {
-    // char *sig_name = strsignal(signum);
-    write(1, "holaaa0\n", 8);
-    // printf("Received Signal [%d] - %s\n", signum, sig_name);
+    char *sig_name = strsignal(signum);
+
+    printf("Received Signal [%d] - %s\n", signum, sig_name);
+    fflush(stdout);
 
     if (signum == SIGUSR2 || signum == SIGTERM)
     {
         printf("Closing program\n");
+        fflush(stdout);
         exit (0);
     }
 }
 
 int main(void)
 {
-    write(1, "holaaa1\n", 8);
-
     printf("PID: %d\n", getpid());
-    write(1, "holaaa2\n", 8);
+    fflush(stdout);
+
     signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
     while (1)
