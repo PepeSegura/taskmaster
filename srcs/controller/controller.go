@@ -210,26 +210,41 @@ func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	signal_name := cmd_conf.StopSignal
-	pid := cmd_conf.CmdInstance.Process.Pid
-
 	signal_num, exists := parser.SignalTypes[signal_name]
-	if !exists {
+
+	var pid int
+
+	if !exists { // unknown signal
 		logging.Error(fmt.Sprintf("invalid signal: %s", signal_name))
-		syscall.Kill(pid, syscall.SIGKILL)
+		if cmd_conf.CmdInstance.Process != nil {
+			pid = cmd_conf.CmdInstance.Process.Pid
+			syscall.Kill(pid, syscall.SIGKILL)
+		} else {
+			return
+		}
 	}
 
+	var err error
 	sentTime := time.Now().Unix()
-	err := syscall.Kill(pid, signal_num)
+	if cmd_conf.CmdInstance.Process != nil {
+		pid = cmd_conf.CmdInstance.Process.Pid
+		err = syscall.Kill(pid, signal_num)
+	} else {
+		return
+	}
 	if err != nil {
 		logging.Error(fmt.Sprintf("failed to send signal: %v", err))
 		return
 	}
 
 	for time.Now().Unix()-sentTime <= int64(cmd_conf.StopTime) && cmd_conf.Status == execution.STARTED {
-		time.Sleep(time.Second / 4)
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	if cmd_conf.Status == execution.STARTED {
-		syscall.Kill(pid, syscall.SIGKILL)
+		if cmd_conf.CmdInstance.Process != nil {
+			pid = cmd_conf.CmdInstance.Process.Pid
+			syscall.Kill(pid, syscall.SIGKILL)
+		}
 	}
 }

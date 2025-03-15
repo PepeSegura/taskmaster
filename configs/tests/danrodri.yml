@@ -1,0 +1,13 @@
+programs:
+  program:
+    cmd: "echo hola"
+    numprocs: 1000
+    autostart: false
+    autorestart: always
+    exitcodes:
+      - 0
+    starttime: 1
+    startretries: 300000
+    stdout: /dev/null
+    stopsignal: SIGTERM
+    stoptime: 5
