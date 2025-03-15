@@ -89,8 +89,8 @@ func (p *Program) validate() error {
 	if strings.TrimSpace(p.Cmd) == "" {
 		return fmt.Errorf("Cmd is empty")
 	}
-	if p.Numprocs <= 0 {
-		return fmt.Errorf("Invalid NumProcs: [%d]", p.Numprocs)
+	if p.Numprocs <= 0 || p.Numprocs > 2048 {
+		return fmt.Errorf("Invalid NumProcs: [%d] (min 1; max 2048)", p.Numprocs)
 	}
 	if p.Autorestart != "always" && p.Autorestart != "never" && p.Autorestart != "unexpected" {
 		return fmt.Errorf("Invalid option in AutoRestart [%s]", p.Autorestart)
