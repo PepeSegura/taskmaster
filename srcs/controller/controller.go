@@ -216,7 +216,7 @@ func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
 
 	if !exists { // unknown signal
 		logging.Error(fmt.Sprintf("invalid signal: %s", signal_name))
-		if cmd_conf.CmdInstance.Process == nil {
+		if cmd_conf.CmdInstance.Process != nil {
 			pid = cmd_conf.CmdInstance.Process.Pid
 			syscall.Kill(pid, syscall.SIGKILL)
 		} else {
@@ -226,7 +226,7 @@ func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
 
 	var err error
 	sentTime := time.Now().Unix()
-	if cmd_conf.CmdInstance.Process == nil {
+	if cmd_conf.CmdInstance.Process != nil {
 		pid = cmd_conf.CmdInstance.Process.Pid
 		err = syscall.Kill(pid, signal_num)
 	} else {
@@ -242,7 +242,7 @@ func sendSignal(cmd_conf *execution.Programs, wg *sync.WaitGroup) {
 	}
 
 	if cmd_conf.Status == execution.STARTED {
-		if cmd_conf.CmdInstance.Process == nil {
+		if cmd_conf.CmdInstance.Process != nil {
 			pid = cmd_conf.CmdInstance.Process.Pid
 			syscall.Kill(pid, syscall.SIGKILL)
 		}
